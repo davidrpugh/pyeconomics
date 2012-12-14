@@ -3,7 +3,7 @@ Computational Economics Lab 1: Solow Model
 
 ###Author: David R. Pugh
 
-![Solow Model](https://github.com/davidrpugh/Computational-Economics/blob/master/Solow/Graphics/Solow-Model-Diagram.png)
+![Solow Model](https://github.com/davidrpugh/Computational-Economics/raw/master/Solow/Graphics/Solow-Model-Diagram.png)
 
 File folder contains:
 
