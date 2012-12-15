@@ -1,5 +1,5 @@
 Computational Economics Lab 1: Solow Model
-------------------------------------
+------------------------------------------
 
 ###Author: David R. Pugh
 
@@ -11,5 +11,5 @@ File folder contains:
      used to solve and simulate the Solow model in the lab.
 2.   'Solow Model.py': Python script to generate the graphics from the
      lab.
-3.  Graphics: Sub-folder containing a '.png' file for each of the
+3.   Graphics: Sub-folder containing a '.png' file for each of the
      plots from the lab.  
