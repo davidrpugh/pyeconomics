@@ -3,7 +3,7 @@ Computational Economics Lab 2: Ramsey Model
 
 ###Author: David R. Pugh
 
-![Ramsey Model](https://github.com/davidrpugh/Computational-Economics/raw/master/Ramsey/Graphics/Ramsey-Phase-Diagram.png')
+![Ramsey Model](https://github.com/davidrpugh/Computational-Economics/raw/master/Ramsey/Graphics/Ramsey-Phase-Diagram.png)
 
 File folder contains:
 
