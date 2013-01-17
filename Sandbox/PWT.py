@@ -56,8 +56,8 @@ def get_data_pwt(path=None, version=71, date='11302012', extract=True, panel=Tru
     return pwt
      
 
-#### Get the averages #### 
 # TODO: Work out how to generate the panel groupings
+
 #def intervals(x, n=5): 
 #    """Maps years to n year groups, eg., 1960-n -> 1960""" 
 #    return 1960 + 5 * int(np.floor((x - 1960.)/5)) 
