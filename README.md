@@ -31,3 +31,13 @@ A discrete time version of [Frank Ramsey's](http://en.wikipedia.org/wiki/Frank_P
 * Compare the linear approximation with the full non-linear optimal policy to discover how good the linear approximation actually is!
 * Some basic welfare analysis of the Ramsey model.
 * Finally, we consider the response of a Ramsey economy to a shock to the growth rate of technology. 
+
+A Real Business Cycles (RBC) model:
+-----------------------------------
+Basic RBC model from Chapter 5 of David Romer's *Advanced Macroeconomics*. In this lab students...
+
+* Explore some of the optimal trade-off between consumption and labor/leisure using 3D graphics and contour plots.
+* Explore some of the basic implications for inter-temporal optimization with two choice variables (i.e., consumption and labor supply!).
+* Solve for the steady-state of the RBC model numerically.
+* Solve for a linear approximation to the recursive equilibrium law of motion for the model using techniques from [Uhlig (1997)](www2.wiwi.hu-berlin.de/wpol/html/toolkit/toolkit.pdf) implemented in the Python class **RBC**.
+* Generate and analyze impulse response functions and simulate data from the model to show that model correctly captures relative volatilities of investment, output, and consumption.

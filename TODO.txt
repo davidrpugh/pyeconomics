@@ -1,5 +1,0 @@
-TODO:
-
-1) Finish RBC Lab
-2) Update the Ramsey Lab
-3) Update Stochastics Lab
