@@ -27,7 +27,7 @@ def get_data_pwt(path=None, version=71, date='11302012', extract=True, panel=Tru
         pwt = pd.read_csv(path)
 
     elif path != None and panel == True:
-        pwt = pd.read_csv(path, index_col=['isocode', 'year'])
+        pwt = pd.read_csv(path, index_col=['year', 'isocode'])
         pwt = pwt.to_panel()
 
     # otherwise, download the appropriate zip file 
@@ -48,7 +48,7 @@ def get_data_pwt(path=None, version=71, date='11302012', extract=True, panel=Tru
         # Do you want a Panel or Dataframe? 
         if panel == True:
             # inelegant! Should use MultiIndex instead...
-            pwt = pd.read_csv(tmp_file, index_col=['isocode', 'year'])
+            pwt = pd.read_csv(tmp_file, index_col=['year', 'isocode'])
             pwt = pwt.to_panel()
         else:
             pass         
