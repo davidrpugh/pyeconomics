@@ -4,6 +4,7 @@ from StringIO import StringIO
 
 import pandas as pd 
 import numpy as np 
+import matplotlib.pyplot as plt
 
 def get_data_pwt(path=None, version=71, date='11302012', extract=True, panel=True):
     """Loads the Penn World Tables (PWT) data. If you have a local copy of the
@@ -55,6 +56,19 @@ def get_data_pwt(path=None, version=71, date='11302012', extract=True, panel=Tru
             
     return pwt
      
+##### Example usage #####
+
+# download data, extract to working directory, load into Pandas Panel
+pwt = get_data_pwt()
+
+# plot some data
+plt.figure(figsize=(8,8))
+for yr in xrange(1951, 2011):
+    pwt['rgdpch'].pct_change().xs(yr).hist(color='blue', normed=True, alpha=0.025)
+plt.xlabel('Annual percentage change in real GDP per capita')
+plt.ylabel('Density')
+plt.title('Growth rates of real GDP per capita 1950-2010\n2005 I$/person, Source: Penn World Tables', weight='bold') 
+plt.savefig('Histogram-historical-growth-rates-RGDPPC.png')
 
 # TODO: Work out how to generate the panel groupings
 
