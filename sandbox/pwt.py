@@ -64,9 +64,9 @@ pwt = get_data_pwt()
 # plot some data
 plt.figure(figsize=(8,8))
 for yr in xrange(1951, 2011):
-    pwt['rgdpch'].pct_change().xs(yr).hist(color='blue', normed=True, alpha=0.025)
+    pwt['rgdpch'].pct_change().xs(yr).hist(color='blue', normed=False, alpha=0.025)
 plt.xlabel('Annual percentage change in real GDP per capita')
-plt.ylabel('Density')
+plt.ylabel('Frequency')
 plt.title('Growth rates of real GDP per capita 1950-2010\n2005 I$/person, Source: Penn World Tables', weight='bold') 
 plt.savefig('Histogram-historical-growth-rates-RGDPPC.png')
 
