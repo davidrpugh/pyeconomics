@@ -1,7 +1,7 @@
 ////////// Basic OLG model with production //////////
 
 ///// Declare variables /////
-var c c1 c2 k w r s i y check1 check2;
+var c c1 c2 k w r s y i check1;
 
 ///// Declare parameter values /////
 parameters alpha beta delta rho theta n g T;
@@ -22,7 +22,7 @@ n = (1 + 0.02)^T - 1;
 g = (1 + 0.02)^T - 1;
 
 // capital's share of output
-alpha = 0.33;
+alpha = 1 / 3;
 
 // depreciation rate
 delta = 1 - (1 - 0.10)^T;
@@ -36,49 +36,45 @@ theta = 1.0;
 kss  = 1.0;
 yss  = kss^alpha;
 wss  = (1 - alpha) * yss;
-rss  = alpha * kss^(alpha - 1) - delta; 
-sss  = wss / (1 + beta^(- 1 / theta) * (1 + rss)^((theta - 1) / theta));
+rss  = alpha * kss^(alpha - 1); 
+sss  = wss / (1 + beta^(- 1 / theta) * (1 + rss - delta)^((theta - 1) / theta));
 c1ss = wss - sss;
-c2ss = (1 + rss) * sss;
+c2ss = (1 + n) * (1 + g) * (1 + rss - delta) * kss;
 css  = c1ss + (1 / ((1 + n) * (1 + g))) * c2ss;  
 iss  = yss - css;
 
 ///// The model /////
 model;
 
-// period 1 flow of funds constraint (young spend their wages)
-w = c1 + s;
+// accounting identity
+y = c + i;
 
 // aggregate consumption is the sum of consumption of both cohorts
 c = c1 + (1 / ((1 + n) * (1 + g))) * c2;
 
-// accounting identity
-y = c + i;
-
-// period 2 flow of funds constraint (old spend their savings)
-c2(+1) = (1 + r(+1) - delta) * s;
+// zero-profit condition
+y = w + r* k(-1);
 
 // equation of motion for capital per effective worker
-k = ((1 - delta) / ((1 + n) * (1 + g))) * k(-1) + i;
+k = (1 / ((1 + n) * (1 + g))) * ((1 - delta) * k(-1) + i);
 
-// Cobb-Douglas production function
-y = k(-1)^alpha;
+// capital is paid its marginal product
+r = alpha * k(-1)^(alpha - 1);
 
 // labor is paid its marginal product
 w = (1 - alpha) * y;
 
-// capital is paid its marginal product
-r = alpha * y / k;
+// period 1 flow of funds constraint (young spend their wages)
+c1 = w - s;
+
+// period 2 flow of funds constraint (old spend their savings)
+c2 = (1 + n) * (1 + g) * (1 + r - delta) * k(-1);
 
 // savings function
-s = w / (1 + beta^(-1 / theta) * (1 + r(+1) - delta)^(-(1 - theta) / theta));
+s = w / (1 + beta^(-1 / theta) * (1 + r(+1) - delta)^((theta - 1) / theta));
 
-// check that accounting identity holds
-check1 = y - (k - ((1 - delta) / ((1 + n) * (1 + g))) * k(-1)) - c;
-
-// check consumption of the old
-check2 = c2 - (1 + n) * (1 + g) * (1 + r - delta) * k(-1);
-
+// check that investment equals savings
+check1 = k - (1 / ((1 + g) * (1 + n))) * s;
 end;
 
 ///// Declare initial values /////
