@@ -467,7 +467,7 @@ class ramseyModel(object):
             step_size: Length of time step for odeint to use when 
                        generating the time paths of k and c.
 
-        Returns: an array of shape (T,6) representing a sample path of 
+        Returns: an array of shape (T, 6) representing a sample path of 
         the economy. Column ordering is k, c, y, i, w, r.
         
         """
@@ -619,45 +619,44 @@ class ramseyModel(object):
 
         return [self.c, saddlePath, count, dist]
 
-    def solve_reverseShoot(self, k0, h=1e-5, T=1000, step_size=0.01):
-        """Computes the full, non-linear saddle path for the Ramsey 
-        model using the 'reverse shooting' algorithm (see Judd (1992) 
-        section 10.7 Infinite-Horizon Optimal Control and Reverse 
-        Shooting, p. 355-361 for details).
+    def solve_reverseShoot(self, k0, h=1e-5, T=1000):
+        """Computes the full, non-linear saddle path for a continuous
+        time version of the Ramsey model using the 'reverse shooting' 
+        algorithm (see Judd (1992) section 10.7 Infinite-Horizon 
+        Optimal Control and Reverse Shooting, p. 355-361 for details).
 
         Inputs:
 
-            k0:  initial value for capital per effective worker, k.
-        
+            k0:        Initial value for capital per effective worker.
+            h:         Step size.
+            T:         Length of time path to plot
+
         """
         # compute steady state values
         k_bar, c_bar = self.SS_dict['k_bar'], self.SS_dict['c_bar']
 
         # local slope of optimal policy evaluated at steady state
         Ck_prime = self.eigVecs[1, self.index] / self.eigVecs[0, self.index]
-        
-        if self.timing == 'discrete':
-            pass
 
-        elif self.timing == 'continuous':
-            # reverse time...stable manifold is now unstable!
-            def inverseRamseySystem(x, t=0):
-                """Reversed Ramsey system of differential eqns."""
-                return [-self.capitalContinuous(x, t), \
-                        -self.consumptionContinuous(x, t)]
-                    
-            if k0 > k_bar:
+        # initial conditions
+        if k0 > k_bar:
                 init = [k_bar + h, c_bar + h * Ck_prime]
-            elif k0 < k_bar:
+        elif k0 < k_bar:
                 init = [k_bar - h, c_bar - h * Ck_prime]
 
-            # grid of time points at which to compute the value of k
-            t = np.arange(0, T, step_size)
-        
-            # integrate backwards to k0
-            saddlePath = odeint(inverseRamseySystem, init, t)
+        # reverse time...stable manifold is now unstable!
+        def inverseRamseySystem(x, t=0):
+            """Reversed Ramsey system of differential eqns."""
+            return [-self.capitalContinuous(x, t), \
+                    -self.consumptionContinuous(x, t)]
 
-        return [saddlePath, Ck_prime]
+        # grid of time points at which to compute the value of k
+        t = np.arange(0, T, h)
+        
+        # integrate backwards to k0
+        saddlePath = odeint(inverseRamseySystem, init, t)
+
+        return saddlePath
 
     ########## Plotting methods ##########
     def plot_phaseSpace(self, gridmax, N=500):

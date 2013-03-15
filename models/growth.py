@@ -31,6 +31,13 @@ class Model(object):
     stochastic growth models. Deterministic versions are based on the
     classic work of Solow (1956) and Ramsey (1928).
 
+    TODO:
+
+        * Implement policy iteration solution method.
+        * Modify get_samplePath() so that one can simulate paths 
+          using optimal policies from value/policy function iteration.
+        * Confirm results from stochastic Solow model.
+
     """
     
     def __init__(self, params, k=None, c=None, **kwargs):
@@ -80,7 +87,7 @@ class Model(object):
 
         # create an empty dictionary to hold SS values
         self.SS_dict    = None
-        
+
         # household utility function 
         self.utility    = kwargs.get('utility', None)
 
@@ -114,6 +121,21 @@ class Model(object):
             self.eps = stats.norm(0, self.param_dict['sigma'])
         else:
             pass
+
+        ##### Compute jacobian, and eigen* #####
+
+        # if no utility function is passed, assume 'solow' policy
+        if self.utility == None:
+            self.get_steadyStateValues('solow')
+            jac, eigVals, eigVecs, ind = self.checkStability('solow')
+        else:
+            self.get_steadyStateValues('ramsey')
+            jac, eigVals, eigVecs, ind = self.checkStability('ramsey')
+
+        self.jacobian = jac    
+        self.eigVals  = eigVals
+        self.eigVecs  = eigVecs
+        self.index    = ind
         
     def get_steadyStateValues(self, which='solow'): 
         """Returns a dictionary containing the steady state values of 
@@ -161,8 +183,17 @@ class Model(object):
         self.SS_dict = {'k_star':kstar, 'y_star':ystar, 'c_star':cstar, 
                         'i_star':istar, 'r_star':rstar, 'w_star':wstar}
 
+    def get_breakEvenInvRate(self):
+        """Returns the break even rate of investment"""
+        # extract params
+        n     = self.param_dict['n']
+        g     = self.param_dict['g']
+        delta = self.param_dict['delta']
+        
+        return 1 - ((1 - delta) / ((1 + n) * (1 + g)))
+    
     def get_ramseySavingsRate(self):
-        """Returns: the steady state savings rate of the Ramsey 
+        """Returns the steady state savings rate of the Ramsey 
         economy.        
 
         """
@@ -215,8 +246,8 @@ class Model(object):
             # for 'solow' policy, Jacobian is a scalar!
             jacobian = k_kEval 
 
-            # eigenvalues and eigenvectosr are trivial
-            eigenvalues, eigenvectors = k_kEval, 1
+            # eigenvalues and eigenvectors are trivial
+            eigenvalues, eigenvectors, index = k_kEval, 1, 0
 
         elif 'ramsey' in policy:
             if self.utility == CRRA:
@@ -242,11 +273,19 @@ class Model(object):
         
             # calculate eigenvalues/vectors
             eigenvalues, eigenvectors = np.linalg.eig(jacobian)
+
+            # which is the eigenvector for the stable eigenvalue
+            if eigenvalues[0] < 1:
+                index = 0
+            elif eigenvalues[1] < 1:
+                index = 1
+            else:
+                raise Exception, 'No stable eigenvalue!'
             
         else:
             raise Exception, 'Invalid policy!'
-        
-        return [jacobian, eigenvalues, eigenvectors]
+         
+        return [jacobian, eigenvalues, eigenvectors, index]
 
     def get_samplePath(self, policy, k0=None, c0=None, T=None, \
                        tol=None, **kwargs):
@@ -259,7 +298,7 @@ class Model(object):
 
             'solow':           Household chooses consumption using the 
                                "rule-of-thumb", 'Solow' policy.
-            'ramseyLinear':    Housdhold chooses consumption using
+            'ramseyLinear':    Household chooses consumption using
                                a linear approximation of the optimal 
                                decison rule.
             'ramseyEuler':     Household chooses consumption using the 
@@ -274,7 +313,7 @@ class Model(object):
         
             k0:  Initial condition for capital per effective worker.
             c0:  Initial condition for consumption per effective 
-                 worker (optional).   
+                 worker.   
             T:   Length of desired sample path.
             tol: Desired tolerance for convergence to steady state.
 
@@ -292,8 +331,9 @@ class Model(object):
         
         """
         # unpack optional keyword args
-        approx = kwargs.get('approx', None)
-        
+        #approx = kwargs.get('approx', None)
+        #index  = kwargs.get('index', None)
+         
         # catch possible user errors
         if self.stochastic == True and tol != None:
             raise Exception, "tol must be 'None' for stochastic model."
@@ -314,7 +354,12 @@ class Model(object):
             self.k = k0
         else:
             pass
-            
+
+        if c0 != None:
+            self.c = c0
+        else:
+            pass
+        
         # generate sample path of fixed length T 
         if T != None:
             path = np.zeros((int(T), 4))
@@ -324,7 +369,7 @@ class Model(object):
                 path[t, 1] = self.c # consumption
                 path[t, 2] = self.z # technology shock
                 path[t, 3] = self.e # disturbance
-                self.update(policy, approx)
+                self.update(policy, **kwargs)
 
         # generates sample path to achieve specified convergence tol
         elif tol != None:
@@ -342,12 +387,13 @@ class Model(object):
                 else:
                     step = np.array([[self.k, self.c, self.z, self.e]])
                     path = np.vstack((path, step))
-                self.update(policy, approx)
+                self.update(policy)
                 dist = np.abs(self.k - k_star)   
                 n_iter += 1
+                
         return path
 
-    def update(self, policy, approx=None):
+    def update(self, policy, **kwargs):
         """Update the state variable, k, the control, c, as well as 
         the technology shocks and their innovations (if stochastics 
         are turned on!)
@@ -355,16 +401,21 @@ class Model(object):
         """
         # Unpack optional keyword args
         approx = kwargs.get('approx', None)
+        index  = kwargs.get('index', None)
                 
         # deterministic cases first!
         if self.stochastic == False:
             if policy == 'solow':
-                self.c = self.solowPolicy(self.k)
+                # next k is a function of current c
                 self.k = self.get_newCapital(self.k, self.c)
+                # next c is a function of next k
+                self.c = self.solowPolicy(self.k)
 
             elif policy == 'ramseyLinear':
+                # next k is a function of current c
+                self.k = self.get_newCapital(self.k, self.c)
+                # next c is function of next k
                 self.c = self.ramseyLinearPolicy(self.k)
-                self.k = self.get_newCapital(self.k, self.c, approx)
                 
             elif policy == 'ramseyEuler':
                 # need to update k first!
@@ -430,27 +481,20 @@ class Model(object):
         Inputs:
 
             k: current period's level of capital per effective worker
+            i: index of the eigenvector associated with the stable 
+               eigenvalue.
         
         Returns: current period's consumption per effective worker.
-    
+            
         """
-
-        # check stability of the model
-        eigVals, eigVecs = self.checkStability('ramseyEuler')[1:]
-
-        # find the stable eigenvalue
-        if np.abs(eigVals[0]) < 1:
-            i = 0
-        elif np.abs(eigVals[1]) < 1:
-            i = 1
-        else:
-            raise Exception, 'Ahhh! Jacobian has no stable eigenvalue!'
-
         # steady state values
         cstar = self.SS_dict['c_star']
         kstar = self.SS_dict['k_star']
+
+        # index of the stable eigenvector
+        i = self.index
         
-        return cstar + (eigVecs[1,i] / eigVecs[0,i]) * (k - kstar)
+        return cstar + (self.eigVecs[1,i] / self.eigVecs[0,i]) * (k - kstar)
 
     def ramseyQuadraticPolicy(self):
         pass
@@ -493,7 +537,7 @@ class Model(object):
         
         return cplus
 
-    def ramseyBellmanPolicy(self):
+    def ramseyBellmanPolicy(self, k, z=1.0):
         pass
 
     ##### method defining the evolution of capital #####
@@ -544,9 +588,9 @@ class Model(object):
 
         Inputs: 
 
-            k:     capital per effective worker
-            c:     consumption per effective worker
-            z:     (default = 1.0) technology shock
+            k: capital per effective worker
+            c: consumption per effective worker
+            z: (default = 1.0) technology shock
 
         Returns: next period's value of capital per effective worker,
         kNext.
@@ -572,16 +616,7 @@ class Model(object):
 
         if self.stochastic == False:
             if approx == 'linear':
-                # check stability of the model
-                jacobian = self.checkStability('ramseyEuler')[0]
-
-                # steady state values
-                cstar = self.SS_dict['c_star']
-                kstar = self.SS_dict['k_star']
-
-                # evolution of linearized capital per effective worker
-                kNext = kstar + jacobian[0,0] * (k - kstar) + \
-                                jacobian[0,1] * (c - cstar) 
+                pass
 
             elif approx == 'quadratic':
                 pass
@@ -635,8 +670,9 @@ class Model(object):
                       before you are "close enough." 
             max_iter: maximum number of iterations until you give up.
 
-        Algorithm may fail to converge when k0 is very small because 
-        initial consumption guess leads to k going negative!
+        Numerical precision of the computer may limit the ability of 
+        the algorithm to converge for initial conditions well 
+        outside steady state.
 
         """
         # catch possible user errors
@@ -664,7 +700,8 @@ class Model(object):
             c_h = kLocus(k0)
         else:
             c_l = c_star
-            c_h = self.get_output(k0)
+            # this assumes that households can eat capital!
+            c_h = (1 - delta) * k0 + self.get_output(k0)
 
         # use 'Solow' policy as initial guess for c0 (if none provided)
         if c0 == None:
@@ -896,8 +933,8 @@ class Model(object):
 
         Inputs:
 
-            1. gridmax: maximum value of k to use in creating the plot.
-            2. N: (default=500) number of grid points to plot. 
+            gridmax: maximum value of k to use in creating the plot.
+            N:       (default=500) number of grid points to plot. 
 
         Returns a list containing the matplotlib objects for the plot.
 
@@ -914,9 +951,9 @@ class Model(object):
 
         # Create the plots
         ax           = plt.subplot(111)
-        output       = ax.plot(grid, grid**alpha, 'r-')[0]
-        actualInv    = ax.plot(grid, s * grid**alpha, 'g-')[0]
-        breakEvenInv = ax.plot(grid, ((1 + g) * (1 + n) - (1 - delta)) * grid, 
+        output       = ax.plot(grid, self.get_output(grid), 'r-')[0]
+        actualInv    = ax.plot(grid, s * self.get_output(grid), 'g-')[0]
+        breakEvenInv = ax.plot(grid, self.get_breakEvenInvRate() * grid, 
                                'b-')[0]
 
         # axes, labels, title, legend, etc
@@ -935,10 +972,10 @@ class Model(object):
 
         Inputs:
 
-            1. gridmax: maximum value of k to use in creating the plot.
-            2. N: (default=500) number of grid points to plot. 
-            3. k0: initial value of capital per effective worker, k.
-            4. T: desired Length of time path for k.
+            gridmax: maximum value of k to use in creating the plot.
+            N:       (default=500) number of grid points to plot. 
+            k0:      initial value of capital per effective worker, k.
+            T:       desired Length of time path for k.
 
         If optional inputs k0 and T are specified, then a timepath for
         capital per effective worker, k, of length N starting from k0 
