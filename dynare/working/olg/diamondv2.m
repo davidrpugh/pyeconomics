@@ -9,37 +9,37 @@ clear global
 tic;
 global M_ oo_ options_ ys0_ ex0_
 options_ = [];
-M_.fname = 'diamond';
+M_.fname = 'diamondv2';
 %
 % Some global variables initialization
 %
 global_initialization;
 diary off;
-logname_ = 'diamond.log';
+logname_ = 'diamondv2.log';
 if exist(logname_, 'file')
     delete(logname_)
 end
 diary(logname_)
-M_.endo_names = 'c';
-M_.endo_names_tex = 'c';
+M_.endo_names = 'y';
+M_.endo_names_tex = 'y';
+M_.endo_names = char(M_.endo_names, 'r');
+M_.endo_names_tex = char(M_.endo_names_tex, 'r');
+M_.endo_names = char(M_.endo_names, 'w');
+M_.endo_names_tex = char(M_.endo_names_tex, 'w');
+M_.endo_names = char(M_.endo_names, 'c');
+M_.endo_names_tex = char(M_.endo_names_tex, 'c');
 M_.endo_names = char(M_.endo_names, 'c1');
 M_.endo_names_tex = char(M_.endo_names_tex, 'c1');
 M_.endo_names = char(M_.endo_names, 'c2');
 M_.endo_names_tex = char(M_.endo_names_tex, 'c2');
-M_.endo_names = char(M_.endo_names, 'k');
-M_.endo_names_tex = char(M_.endo_names_tex, 'k');
-M_.endo_names = char(M_.endo_names, 'w');
-M_.endo_names_tex = char(M_.endo_names_tex, 'w');
-M_.endo_names = char(M_.endo_names, 'r');
-M_.endo_names_tex = char(M_.endo_names_tex, 'r');
 M_.endo_names = char(M_.endo_names, 's');
 M_.endo_names_tex = char(M_.endo_names_tex, 's');
-M_.endo_names = char(M_.endo_names, 'y');
-M_.endo_names_tex = char(M_.endo_names_tex, 'y');
-M_.endo_names = char(M_.endo_names, 'i');
-M_.endo_names_tex = char(M_.endo_names_tex, 'i');
+M_.endo_names = char(M_.endo_names, 'k');
+M_.endo_names_tex = char(M_.endo_names_tex, 'k');
 M_.endo_names = char(M_.endo_names, 'check1');
 M_.endo_names_tex = char(M_.endo_names_tex, 'check1');
+M_.endo_names = char(M_.endo_names, 'check2');
+M_.endo_names_tex = char(M_.endo_names_tex, 'check2');
 M_.param_names = 'alpha';
 M_.param_names_tex = 'alpha';
 M_.param_names = char(M_.param_names, 'beta');
@@ -67,16 +67,16 @@ M_.H = 0;
 options_.block=0;
 options_.bytecode=0;
 options_.use_dll=0;
-erase_compiled_function('diamond_dynamic');
+erase_compiled_function('diamondv2_dynamic');
 M_.lead_lag_incidence = [
  0 2 0;
- 0 3 0;
+ 0 3 12;
  0 4 0;
- 1 5 0;
+ 0 5 0;
  0 6 0;
- 0 7 12;
+ 0 7 13;
  0 8 0;
- 0 9 0;
+ 1 9 0;
  0 10 0;
  0 11 0;]';
 M_.equations_tags = {
@@ -89,8 +89,8 @@ M_.maximum_endo_lead = 1;
 oo_.steady_state = zeros(10, 1);
 M_.params = NaN(8, 1);
 M_.NNZDerivatives = zeros(3, 1);
-M_.NNZDerivatives(1) = 29;
-M_.NNZDerivatives(2) = 8;
+M_.NNZDerivatives(1) = 30;
+M_.NNZDerivatives(2) = 13;
 M_.NNZDerivatives(3) = -1;
 M_.params( 8 ) = 30;
 T = M_.params( 8 );
@@ -102,33 +102,32 @@ M_.params( 6 ) = 1.02^M_.params(8)-1;
 n = M_.params( 6 );
 M_.params( 7 ) = 1.02^M_.params(8)-1;
 g = M_.params( 7 );
-M_.params( 1 ) = 0.3333333333333333;
+M_.params( 1 ) = 0.33;
 alpha = M_.params( 1 );
 M_.params( 3 ) = 1-0.9^M_.params(8);
 delta = M_.params( 3 );
 M_.params( 5 ) = 1.0;
 theta = M_.params( 5 );
 kss  = 1.0;
-yss  = kss^alpha;
+yss  = (1 / ((1 + g) * (1 + n)))^alpha * kss^alpha;
 wss  = (1 - alpha) * yss;
-rss  = alpha * kss^(alpha - 1); 
+rss  = alpha * (1 / ((1 + g) * (1 + n)))^(alpha - 1) * kss^(alpha - 1) - delta; 
 sss  = wss / (1 + beta^(- 1 / theta) * (1 + rss - delta)^((theta - 1) / theta));
 c1ss = wss - sss;
-c2ss = (1 + n) * (1 + g) * (1 + rss - delta) * kss;
-css  = c1ss + (1 / ((1 + n) * (1 + g))) * c2ss;  
-iss  = yss - css;
+c2ss = (1 / (1 + g)) * (1 + rss) * sss;
+css  = c1ss + (1 / (1 + n)) * c2ss;  
 %
 % INITVAL instructions
 %
 options_.initval_file = 0;
-oo_.steady_state( 4 ) = kss;
-oo_.steady_state( 2 ) = c1ss;
-oo_.steady_state( 3 ) = c2ss;
-oo_.steady_state( 6 ) = rss;
-oo_.steady_state( 5 ) = wss;
+oo_.steady_state( 8 ) = kss;
+oo_.steady_state( 5 ) = c1ss;
+oo_.steady_state( 6 ) = c2ss;
+oo_.steady_state( 2 ) = rss;
+oo_.steady_state( 3 ) = wss;
 oo_.steady_state( 7 ) = sss;
-oo_.steady_state( 1 ) = css;
-oo_.steady_state( 8 ) = yss;
+oo_.steady_state( 4 ) = css;
+oo_.steady_state( 1 ) = yss;
 oo_.endo_simul=[oo_.steady_state*ones(1,M_.maximum_lag)];
 if M_.exo_nbr > 0;
 	oo_.exo_simul = [ones(M_.maximum_lag,1)*oo_.exo_steady_state'];
@@ -137,7 +136,7 @@ if M_.exo_det_nbr > 0;
 	oo_.exo_det_simul = [ones(M_.maximum_lag,1)*oo_.exo_det_steady_state'];
 end;
 steady;
-save('diamond_results.mat', 'oo_', 'M_', 'options_');
+save('diamondv2_results.mat', 'oo_', 'M_', 'options_');
 diary off
 
 disp(['Total computing time : ' dynsec2hms(toc) ]);
