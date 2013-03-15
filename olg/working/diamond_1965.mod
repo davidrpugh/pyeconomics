@@ -72,7 +72,7 @@ w = (1 - alpha) * y;
 c1 + s = w;
 
 // period 2 flow of funds constraint (old spend their savings)
-c2(+1) = (1 / (1 + g)) * (1 + r(+1)) * s;
+c2 = (1 / (1 + g)) * (1 + r) * s;
 
 // savings function
 s = w / (1 + beta^(-1 / theta) * (1 + r(+1))^((theta - 1) / theta));
@@ -111,4 +111,4 @@ steady;
 check;
 
 ///// Deterministic simulation /////
-simul(periods = 100)
+simul(periods = 100, datafile=diamond_1965_initvals);

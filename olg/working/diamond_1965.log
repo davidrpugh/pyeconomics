@@ -1,0 +1,34 @@
+ 
+STEADY-STATE RESULTS:
+ 
+y      		 0.248527
+r      		 4.6154
+w      		 0.166513
+c      		 0.200422
+c1     		 0.118852
+c2     		 0.147753
+s      		 0.0476606
+k      		 0.0482844
+check1 		 0
+check2 		 0
+ 
+EIGENVALUES:
+         Modulus             Real        Imaginary
+
+          0.3387           0.3387                0
+       1.348e+33        1.348e+33                0
+
+
+There are 1 eigenvalue(s) larger than 1 in modulus 
+for 1 forward-looking variable(s)
+ 
+The rank condition is verified.
+ 
+error: fgetl: invalid stream number = -1
+error: called from:
+error:   /usr/share/dynare/matlab/read_data_.m at line 37, column 16
+error:   /usr/share/dynare/matlab/simul.m at line 68, column 9
+error:   /home/david/projects/pyeconomics/olg/working/diamond_1965.m at line 142, column 1
+error:   /usr/share/dynare/matlab/dynare.m at line 122, column 1
+octave-3.2.4:13> quit
+
