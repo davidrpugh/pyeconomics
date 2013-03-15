@@ -1,4 +1,4 @@
-////////// Basic OLG model with production //////////
+////////// Diamond (1965): Basic OLG model with production //////////
 
 ///// Declare variables /////
 var y r w c c1 c2 s k check1 check2;
@@ -34,12 +34,26 @@ theta = 1.0;
 
 // capital per effective worker
 kss  = 1.0;
+
+// output per effective worker
 yss  = (1 / ((1 + g) * (1 + n)))^alpha * kss^alpha;
+
+// real wage
 wss  = (1 - alpha) * yss;
+
+// net interest rate
 rss  = alpha * (1 / ((1 + g) * (1 + n)))^(alpha - 1) * kss^(alpha - 1) - delta; 
+
+// savings
 sss  = wss / (1 + beta^(- 1 / theta) * (1 + rss - delta)^((theta - 1) / theta));
+
+// consumption of the young cohort
 c1ss = wss - sss;
+
+// consumption of the old cohort
 c2ss = (1 / (1 + g)) * (1 + rss) * sss;
+
+// consumption per effective worker
 css  = c1ss + (1 / (1 + n)) * c2ss;  
 
 ///// The model /////
@@ -92,3 +106,9 @@ end;
 
 ///// Compute steady state values /////
 steady;
+
+///// Computes the eigenvalues of the linearized model /////
+check;
+
+///// Deterministic simulation /////
+simul(periods = 100)

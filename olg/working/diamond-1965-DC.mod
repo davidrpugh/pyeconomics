@@ -90,4 +90,5 @@ c  = css;
 y  = yss;
 end; 
 
+///// Compute steady state values /////
 steady;
