@@ -1,0 +1,26 @@
+ 
+STEADY-STATE RESULTS:
+ 
+c      		 0.195737
+c1     		 0.114756
+c2     		 0.265702
+k      		 0.0140254
+w      		 0.160774
+r      		 5.73149
+s      		 0.0460179
+y      		 0.241161
+i      		 0.0454233
+check1 		 0
+ 
+EIGENVALUES:
+         Modulus             Real        Imaginary
+
+          0.3333           0.3333                0
+       7.893e+21        7.893e+21                0
+
+
+There are 1 eigenvalue(s) larger than 1 in modulus 
+for 1 forward-looking variable(s)
+ 
+The rank condition is verified.
+ 

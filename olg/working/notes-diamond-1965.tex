@@ -1,0 +1,105 @@
+\documentclass[11pt]{article}
+\usepackage{geometry}
+\geometry{letterpaper}
+\usepackage{amsmath}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{Basic OLG model with production}
+
+\section{The model}
+
+\subsection{Firm behavior}
+Two exogenous sources of growth in the modeL: population growth and technology progress:
+\begin{align}
+A_{t+1} =& (1 + g)A_t \\
+L_{t+1} =& (1 + n)L_t 
+\end{align}
+where $L_t$ denotes population of the ``Young'' in period $t$.
+
+While the aggregate capital stock, $K$, is predetermined, the stocks of aggregate technology, $A$, and labor, $L$, are not. Thus aggregate output in period $t$ is
+\begin{equation}
+Y_t = K_{t-1}^{\alpha}(A_tL_t)^{1-\alpha} 
+\end{equation}
+Why? In a model with elastic labor supply, $L_t$ is a choice variable and is determined in period $t$. In a model with aggregate productivity shocks the stock of technology used in production in period $t$ includes the period $t$ productivity shock and thus $A_t$ is also determined in period $t$. 
+
+Because both technology and labor supply are growing, we need to work with intensive form of output:
+\begin{equation}\label{eq:production}
+y_t = \frac{Y_t}{A_tL_t} = \left(\frac{1}{(1 + g)(1 + n)}\right)^{\alpha}k^{\alpha}_{t-1}
+\end{equation}
+
+Factor markets are assumed to be competitive, thus both capital and labor earn their marginal products.
+\begin{align}
+r_t =& \alpha K_{t-1}^{\alpha - 1}(A_tL_t)^{1 - \alpha} - \delta \\
+W_t =& (1 - \alpha) K_{t-1}^{\alpha}(A_tL_t)^{-\alpha}A_t
+\end{align}
+In their intensive forms the net interest rate and the real wage become:
+\begin{align}
+r_t =& \alpha \left(\frac{1}{(1 + g)(1 + n)}\right)^{\alpha-1}k^{\alpha-1}_{t-1} - \delta \\
+w_t =& (1 - \alpha)\left(\frac{1}{(1 + g)(1 + n)}\right)^{\alpha}k^{\alpha}_{t-1}
+\end{align}
+
+Because output is generated using a constant returns to scale technology there qill be zero profits.  The following is the intensive form of the zero profit condition.
+\begin{equation}\label{eq:zero-profit}
+y_t = \frac{1}{(1 + g)(1 + n)}(r_t + \delta)k_{t-1} + w_t 
+\end{equation}
+In order for the model to be fully specified, only one of equations \ref{eq:production} and \ref{eq:zero-profit} needs to be included in the Dynare model file. 
+
+\subsection{Household behavior}
+Households live for two periods. Utility is a function of consumption per person when ``young'', $\frac{C_{1,t}}{L_t}$,  and ``old'', $\frac{C_{2,t+1}}{L_t}$.
+\begin{equation}
+\max_{\frac{C_{1,t}}{L_t}, \frac{C_{2,t}}{L_t}} U_t = \frac{\left(\frac{C_{1,t}}{L_t}\right)^{1 - \theta}}{1-\theta} + \beta \frac{\left(\frac{C_{2,t+1}}{L_t}\right)^{1 - \theta}}{1-\theta}
+\end{equation}
+Subject to the following constraints flow of funds contraints:
+\begin{align}
+\frac{C_{1,t}}{L_t} + \frac{S_t}{L_t} =& W_t \\
+\frac{C_{2,t+1}}{L_t} =& (1 + r_{t+1})\frac{S_{t}}{L_t}
+\end{align} 
+
+Defining consumption and savings per effective ``young'' person in period $t$ as $c_{1,t}=\frac{C_{1,t}}{A_tL_t}$ and $s_t = \frac{S_t}{A_tL_t}$; and consumption per effective ``old'' person in period $t+1$ as $\frac{C_{2,t+1}}{A_{t+1}L_t}$, the above problem can be re-written in intensive form as follows:
+\begin{equation}
+\max_{c_{1,t}, c_{2,t+1}} \frac{(c_{1,t}A_t)^{1 - \theta}}{1 - \theta} + \beta \frac{(c_{2,t+1}A_{t+1})^{1 - \theta}}{1 - \theta}
+\end{equation} 
+subject to:
+\begin{align}
+c_{1,t} + s_t =& w_t \\
+c_{2,t+1} =& \frac{1}{1+g}(1 + r_{t+1})s_{t}
+\end{align}
+
+Easiest way forward it to use the first two constraints to eliminate $c_{1,t}$ and $c_{2,t+1}$ leaving $s_t$ as the only choice variable.\footnote{Alternatively, one could write down a Lagrangian using both flow of funds constaints and derive the consumption Euler equation:
+\begin{equation}
+c_{1,t}^{-\theta} = \frac{\beta}{1 + g}(1 + r_{t+1})c_{2,t+1}^{-\theta}
+\end{equation}
+} The Lagrangian for this equivalent optimization problem is
+\begin{equation}
+\mathcal{L} = \max_{s_t} \frac{((w_t - s_t)A_t)^{1 - \theta}}{1 - \theta} + \beta \frac{\left(\frac{1}{1+g}(1 + r_{t+1})s_{t}A_{t+1}\right)^{1 - \theta}}{1 - \theta}
+\end{equation}
+
+First-order necessary condition for $s_t$ is:
+\begin{align}
+\frac{\partial \mathcal{L}}{\partial s_t}:& -A_t((w_t - s_t)A_t)^{-\theta} + \\ \notag
+&\beta\frac{1}{1 + g}(1 + r_{t+1})A_{t+1}\left(\frac{1}{1 + g}(1 + r_{t+1})s_{t}A_{t+1}\right)^{-\theta} = 0
+\end{align}
+
+Re-arranging the above yields the optimal savings function for the ``Young'' household:
+\begin{align}
+%A_t((w_t - s_t)A_t)^{-\theta} =& \beta\frac{1}{1 + g}(1 + r_{t+1})A_{t+1}\left(\frac{1}{1 + g}(1 + r_{t+1})s_{t}A_{t+1}\right)^{-\theta} \\ \notag
+%((w_t - s_t)A_t)^{-\theta} =& \beta(1 + r_{t+1})\left(\frac{1}{1 + g}(1 + r_{t+1})s_{t}A_{t+1}\right)^{-\theta} \\ \notag
+%(w_t - s_t)^{-\theta} =& \beta(1 + r_{t+1})((1 + r_{t+1})s_{t})^{-\theta} \\ \notag
+%(w_t - s_t)^{-\theta} =& \beta(1 + r_{t+1})^{1-\theta}s_{t}^{-\theta} \\ \notag
+%w_t - s_t =& \beta^{-\frac{1}{\theta}}(1 + r_{t+1})^{\frac{\theta-1}{\theta}}s_{t} \\ \notag
+s_t(r_{t+1}, w_t) = \frac{w_t}{1 + \beta^{-\frac{1}{\theta}}(1 + r_{t+1})^{\frac{\theta-1}{\theta}}}
+\end{align}
+
+\subsection{Equation of Motion for $k$}
+As in the infinite-horizon model, we can aggregate the individuals' behavior to characterize the dynamics of the economy. As described above, the capital stock at end of period $t$ is the amount saved by the ``young'' individuals in period $t$:
+\begin{equation}
+K_t = (1 - \delta)K_{t-1} + s(r_{t+1}, w_t)
+\end{equation}
+which in intensive form is
+\begin{equation}
+k_t = \frac{(1 - \delta)}{(1 + g)(1 + n)}k_{t-1} + s(r_{t+1}, w_t)
+\end{equation}
+
+\end{document}
