@@ -1,6 +1,8 @@
 from __future__ import division
 import numpy as np
-from scipy import interpolate, linalg
+from scipy import linalg
+
+from pyeconomics.interpolation import interpolate
 
 # Defining the transition matrix.
 
@@ -481,21 +483,21 @@ C  = Y[:-1] - KImp[1:] + (1 - delta) * KImp[1:-1]
 
 Yind = Cind + Kind[1:] - (1 - delta) * Kind[:-1]
 
-print 'Correlation of individual and aggregate consumption:', corrcoef([Cind,C])
-print 'Correlation of individual consumption and aggregate income:', corrcoef([Cind,Y(1:end-1)])
-print 'Correlation of individual consumption and aggregate capital:', corrcoef([Cind,KImp(1:end-1)])
-print 'Correlation of individual consumption and individual income:', corrcoef([Cind,Yind])
-print 'Correlation of individual consumption and individual capital:', corrcoef([Cind,Kind(1:end-1)])
-print 'Standard deviation of individual consumption:', std(Cind)
-print 'Standard deviation of individual capital:', std(Kind)
-print 'Autocorrelation of individual consumption:', corrcoef([Cind(1:end-3),Cind(2:end-2),Cind(3:end-1),Cind(4:end)])
-print 'Autocorrelation of individual capital:', corrcoef([Kind(1:end-3),Kind(2:end-2),Kind(3:end-1),Kind(4:end)])
-print 'Autocorrelation of individual consumption growth:', cgrowth = log(Cind(2:end))-log(Cind(1:end-1));
-corrcoef([cgrowth(1:end-3),cgrowth(2:end-2),cgrowth(3:end-1),cgrowth(4:end)])
-print 'Max error Ke (%)', 100*max(abs(log(KeSim)-log(KeImp)))
-print 'Max error Ku (%)', 100*max(abs(log(KuSim)-log(KuImp)))
-print 'Mean error Ke (%)', 100*mean(abs(log(KeSim)-log(KeImp)))
-print 'Mean error Ku (%)', 100*mean(abs(log(KuSim)-log(KuImp)))
-print 'R-Square K', 1-var(KImp-KFit)/var(KImp)
-print 'R-Square Ke', 1-var(KeImp-KeFit)/var(KeImp)
-print 'R-Square Ku', 1-var(KuImp-KuFit)/var(KuImp)
+print 'Correlation of individual and aggregate consumption:', np.corrcoef([Cind,C])
+print 'Correlation of individual consumption and aggregate income:', np.corrcoef([Cind,Y(1:end-1)])
+print 'Correlation of individual consumption and aggregate capital:', np.corrcoef([Cind,KImp[:-1]])
+print 'Correlation of individual consumption and individual income:', np.corrcoef([Cind,Yind])
+print 'Correlation of individual consumption and individual capital:', np.corrcoef([Cind,Kind[:-1]])
+print 'Standard deviation of individual consumption:', np.std(Cind)
+print 'Standard deviation of individual capital:', np.std(Kind)
+#print 'Autocorrelation of individual consumption:', corrcoef([Cind(1:end-3),Cind(2:end-2),Cind(3:end-1),Cind(4:end)])
+#print 'Autocorrelation of individual capital:', corrcoef([Kind(1:end-3),Kind(2:end-2),Kind(3:end-1),Kind(4:end)])
+#print 'Autocorrelation of individual consumption growth:', cgrowth = log(Cind(2:end))-log(Cind(1:end-1));
+#corrcoef([cgrowth(1:end-3),cgrowth(2:end-2),cgrowth(3:end-1),cgrowth(4:end)])
+print 'Max error Ke (%)', 100 * np.max(np.abs(np.log(KeSim) - np.log(KeImp)))
+print 'Max error Ku (%)', 100 * np.max(np.abs(np.log(KuSim) - np.log(KuImp)))
+print 'Mean error Ke (%)', 100 * np.mean(np.abs(np.log(KeSim) - np.log(KeImp)))
+print 'Mean error Ku (%)', 100 * np.mean(np.abs(np.log(KuSim) - np.log(KuImp)))
+print 'R-Square K', 1 - np.var(KImp - KFit) / np.var(KImp)
+print 'R-Square Ke', 1 - np.var(KeImp - KeFit) / np.var(KeImp)
+print 'R-Square Ku', 1 - np.var(KuImp - KuFit) / np.var(KuImp)
