@@ -47,7 +47,7 @@ p11 = ((1 - UnempG) - UnempB * p21) / (1 - UnempB)
 P01 = np.array([[p11,1 - p11], [p21, p22]])
 
 P = np.vstack((np.hstack((PZ[0, 0] * P11, PZ[0, 1] * P10)), 
-              np.hstack((PZ[1, 0] * P01, PZ[1, 1] * P00))))
+               np.hstack((PZ[1, 0] * P01, PZ[1, 1] * P00))))
 
 # Model Parameters
 
@@ -107,9 +107,6 @@ for ii in range(2):
                 kpp1[ii, i, l, :, j] = (1 - delta) * kp.flatten()
                 kpp2[ii, i, l, :, j] = .3 * (1 - delta) * kp.flatten()
 
-# deviates from Matlab behavior!
-kmat, Kemat, Kumat = np.meshgrid(kp, Ke, Ku, indexing='xy') 
-
 # Initial aggregate policy function (guess: unit root.)
 A = np.empty((2, 2, 2))
 A[0] = linalg.inv(np.array([[P11[0, 0], P11[1,0] * UnempG / (1 - UnempG)], 
@@ -152,15 +149,14 @@ KpeN = np.maximum(KpeN, np.min(Ke))
 KpuN = np.minimum(KpuN, np.max(Ku))
 KpuN = np.maximum(KpuN, np.min(Ku))
 
-
 # Solving the individual's Euler equation with endogenous gridpoints.
 
 ConvCrit = 1
 s = 0
 
-print 'Solving the individual and aggregate problem until ConvCrit < 1e-6'
+print 'Solving the individual and aggregate problem until ConvCrit < 1e-4'
 
-while s < 1:#ConvCrit > 1e-6:
+while ConvCrit > 1e-4:
     s = s + 1
 
     # not sure whether or not this should be inside the while loop?
@@ -205,54 +201,34 @@ while s < 1:#ConvCrit > 1e-6:
         for j in range(NK):
             for l in range(NK):
                 x  = k[i, 0, l, :, j]
-                Y  = kp.flatten()
-                xi = kp.flatten()
+                Y  = kp
+                xi = kp
                 if np.min(k[i, 0, l, :,j]) > 0:
                     x = np.append(0, x)
                     Y = np.append(0, Y)
-                    kpmat[i, 0, l, :, j] = interpolate.interp1d(x, Y, kind='linear')(xi)
+                    kpmat[i, 0, l, :, j] = [interpolate.linear.lininterp1(val, x, Y) for val in xi]
                 else:
-                    kpmat[i, 0, l, :, j] = interpolate.interp1d(x, Y, kind='linear')(xi)
+                    kpmat[i, 0, l, :, j] = [interpolate.linear.lininterp1(val, x, Y) for val in xi]
                 
                 x  = k[i, 1, l, :, j]
-                Y  = kp.flatten()
-                xi = kp.flatten()
+                Y  = kp
+                xi = kp
                 if np.min(k[i, 1, l, :, j]) > 0:
                     x = np.append(0, x)
-                    Y  = np.append(0, Y)
-                    kpmat[i, 1, l, :,j] = interpolate.interp1d(x, Y, kind='linear')(xi)
+                    Y = np.append(0, Y)
+                    kpmat[i, 1, l, :,j] = [interpolate.linear.lininterp1(val, x, Y) for val in xi]
                 else:
-                    kpmat[i, 1, l, :, j] = interpolate.interp1d(x, Y, kind='linear')(xi)
-
-    # Update the individual policy functions for t+1 (interpolation using griddata is unacceptably slow!):
+                    kpmat[i, 1, l, :, j] = [interpolate.linear.lininterp1(val, x, Y) for val in xi]
+    
+    # Update the individual policy functions for t+1
     kpp2New = np.empty((2, 2, NK, Nk, NK))
     for ii in range(2):
         for i in range(2):
             for j in range(NK):
                 for l in range(NK):
-                    # interpolation points needs to be (NK * Nk * NK, 3)
-                    points = np.hstack((Kemat.reshape((NK * Nk * NK, 1)),  
-                                        kmat.reshape((NK * Nk * NK, 1)),
-                                        Kumat.reshape((NK * Nk * NK, 1))))
-                    # values needs to be (NK * Nk * NK,)
-                    values = kpmat[i, 0, :, :, :].flatten()
-                    # desired interpolation points needs to be (Nk, 3)
-                    xi = (np.repeat(KpeN[ii, i, j, l], Nk), 
-                          kp.flatten(), 
-                          np.repeat(KpuN[ii, i, j, l], Nk))
-                    xi = np.hstack((np.tile(KpeN[ii, i, j, l], (Nk, 1)), 
-                                    kp, 
-                                    np.tile(KpuN[ii, i, j, l], (Nk, 1))))
-                    kpp1[ii, i, l, :, j] = interpolate.griddata(points, 
-                                                                values, 
-                                                                xi, 
-                                                                method='linear')
-                    # values needs to be (NK * Nk * NK,)
-                    values = kpmat[i, 1, :, :, :].flatten()
-                    kpp2New[ii, i, l, :, j] = interpolate.griddata(points, 
-                                                                   values, 
-                                                                   xi, 
-                                                                   method='linear')
+                    kpp1[ii, i, l, :, j] = [interpolate.linear.lininterp3(KpeN[ii, i, j, l], kp[k, 0], KpuN[ii, i, j, l], Ke, kp, Ku, kpmat[i, 0, :, :, :]) for k in range(Nk)]
+                    kpp2New[ii, i, l, :, j] = [interpolate.linear.lininterp3(KpeN[ii, i, j, l], kp[k, 0], KpuN[ii, i, j, l], Ke, kp, Ku, kpmat[i, 1, :, :, :]) for k in range(Nk)]
+                                           
     
     # Update the convergence measure:
     ConvCrit = np.max(np.abs(kpp2New[0, 0, 0, :, 0] - kpp2[0, 0, 0, :, 0]) / (1 + np.abs(kpp2[0, 0, 0, :, 0])))
@@ -266,12 +242,13 @@ while s < 1:#ConvCrit > 1e-6:
     for i in range(NK):
         for j in range(NK):
             for l in range(2):
-                x = kp.flatten()
+                x = kp
                 Y = kpmat[l, 0, j, :, i]
-                KpeNew[l, i, j] = interpolate.interp1d(x, Y, kind='linear')(Ke[i, 0]) + de
+                KpeNew[l, i, j] = interpolate.linear.lininterp1(Ke[i, 0], x, Y) + de
                 Y = kpmat[l, 1, j, :, i]
-                KpuNew[l, i, j] = interpolate.interp1d(x, Y, kind='linear')(Ku[j, 0]) + du
+                KpuNew[l, i, j] = interpolate.linear.lininterp1(Ku[j, 0], x, Y) + du
 
+    # no idea what this conditional is doing!
     if s > 200:
         rho = 0;
         Kpe = rho * Kpe + (1 - rho) * KpeNew
@@ -310,34 +287,33 @@ InDist = pdistyoung[:, 1:]
 
 NDist = len(InDist)
 
-kk = np.linspace(0, kmax, NDist).reshape((NDist, 1))
+kk = np.linspace(0, kmax, NDist)
 
 Pe = InDist[:, 1]
 Pu = InDist[:, 0]
 
 # Exogenous shocks
 
-Z    = np.loadtxt('Z.txt');
-ZSim = -Z + 3
+Z    = np.loadtxt('Z.txt', dtype='int')
+ZSim = -Z + 2 # Python indexing starts at 0!
 
 KeSim = np.zeros(Z.shape)
-KuSim = KeSim
+KuSim = np.zeros(Z.shape)
 
-KeSim[0] = (kk.T).dot(Pe)
-KuSim[0] = (kk.T).dot(Pu)
+KeSim[0] = kk.dot(Pe)
+KuSim[0] = kk.dot(Pu)
 
-KeImp = KeSim
-KuImp = KuSim
+# make sure to use copy?
+KeImp = KeSim.copy()
+KuImp = KuSim.copy()
 
-KeFit = KeSim
-KuFit = KuSim
-
-KuMat2, KeMat2 = np.meshgrid(Ku, Ke)
+KeFit = KeSim.copy()
+KuFit = KuSim.copy()
 
 ind_switch = np.loadtxt('ind_switch.txt')
-ind_switch = -ind_switch + 3
-Kind = np.zeros(Z.shape);
-Cind = np.zeros((len(Z) - 1, 1))
+ind_switch = -ind_switch + 2 # careful about indexing!
+Kind = np.zeros(Z.shape)
+Cind = np.zeros(len(Z) - 1)
 Kind[0] = 43
 percentile = np.zeros((len(Z), 6))
 moments    = np.zeros((len(Z), 5))
@@ -349,155 +325,163 @@ Wvec       = np.zeros((len(Z), 1))
 # Let's rock'n'roll
 
 s = 0
-SimLength = 10000 - 1
+SimLength = 100 - 1
 for i in range(SimLength):
     s = s + 1
-    KpeSim = interp2(KuMat2,KeMat2,Kpe(:,:,ZSim(i)),KuSim(i),KeSim(i));
-    KpuSim = interp2(KuMat2,KeMat2,Kpu(:,:,ZSim(i)),KuSim(i),KeSim(i));
+    if s % 10 == 0:
+        print "s =", s
+        
+    KpeSim = interpolate.linear.lininterp2(KuSim[i], KeSim[i], Ku, Ke, Kpe[ZSim[i], :, :])
+    KpuSim = interpolate.linear.lininterp2(KuSim[i], KeSim[i], Ku, Ke, Kpu[ZSim[i], :, :])
 
-    KpeFit = interp2(KuMat2,KeMat2,Kpe(:,:,ZSim(i)),KuImp(i),KeImp(i));
-    KpuFit = interp2(KuMat2,KeMat2,Kpu(:,:,ZSim(i)),KuImp(i),KeImp(i));
+    KpeFit = interpolate.linear.lininterp2(KuImp[i], KeImp[i], Ku, Ke, Kpe[ZSim[i], :, :])
+    KpuFit = interpolate.linear.lininterp2(KuImp[i], KeImp[i], Ku, Ke, Kpu[ZSim[i], :, :])
+             
+    kprimeE = [interpolate.linear.lininterp3(kk.dot(Pe), val, kk.dot(Pu), Ke, kp, Ku, kpmat[ZSim[i], 0, :,:,:]) for val in kk]
+    kprimeU = [interpolate.linear.lininterp3(kk.dot(Pe), val, kk.dot(Pu), Ke, kp, Ku, kpmat[ZSim[i], 1, :,:,:]) for val in kk]
+    
+    Kind[i + 1] = interpolate.linear.lininterp3(kk.dot(Pe), Kind[i], kk.dot(Pu), Ke, kp, Ku, kpmat[ZSim[i], ind_switch[i], :, :, :])
+    K = (1 - Unemp[ZSim[i], 0]) * KeImp[i] + Unemp[ZSim[i], 0] * KuImp[i]
+    r = 1 + alpha * ZZ[ZSim[i], 0] * (K / (h * (1 - Unemp[ZSim[i], 0])))**(alpha - 1) - delta
+    w = (1 - alpha) * ZZ[ZSim[i], 0] * (K / (h * (1 - Unemp[ZSim[i], 0])))**alpha
 
-    kprimeE = interp3(Kemat,kmat,Kumat,kpmat(:,:,:,1,ZSim(i)),kk'*Pe,kk,kk'*Pu);
-    kprimeU = interp3(Kemat,kmat,Kumat,kpmat(:,:,:,2,ZSim(i)),kk'*Pe,kk,kk'*Pu);
+    # not sure what is going on with ind_switch
+    Cind[i] = r * Kind[i] + (1 - ind_switch[i]) * h * w * (1 - tau[0, ZSim[i]]) + ind_switch[i] * w * UI - Kind[i + 1]
+    Rvec[i] = r
+    Wvec[i] = w
+    
+    kprimeE = np.minimum(kprimeE, np.max(kk))
+    kprimeE = np.maximum(kprimeE, np.min(kk))
 
-    Kind(i+1) = interp3(Kemat,kmat,Kumat,kpmat(:,:,:,ind_switch(i),ZSim(i)),kk'*Pe,Kind(i),kk'*Pu);
-    K = (1-Unemp(ZSim(i)))*KeImp(i)+Unemp(ZSim(i))*KuImp(i);
-    r = 1+alpha*ZZ(ZSim(i))*(K/(h*(1-Unemp(ZSim(i)))))^(alpha-1)-delta;
-    w = (1-alpha)*ZZ(ZSim(i))*(K/(h*(1-Unemp(ZSim(i)))))^(alpha);
-    Cind(i,1) = r*Kind(i)+(2-ind_switch(i))*h*w*(1-tau(ZSim(i)))+(ind_switch(i)-1)*w*UI-Kind(i+1);
-    Rvec(i) = r;
-    Wvec(i) = w;
+    kprimeU = np.minimum(kprimeU, np.max(kk))
+    kprimeU = np.maximum(kprimeU, np.min(kk))
 
-    kprimeE = min(kprimeE,max(kk));
-    kprimeE = max(kprimeE,min(kk));
+    P = (1 - Unemp[ZSim[i], 0]) * Pe + Unemp[ZSim[i], 0] * Pu
 
-    kprimeU = min(kprimeU,max(kk));
-    kprimeU = max(kprimeU,min(kk));
+    # This section computes percentiles of something...not sure what!    
+    CP = np.cumsum(P)
+    IP5 = np.nonzero(CP < 0.05)[0][-1] # occasionally this is empty!
+    percentile[i, 0] = (0.05 - CP[IP5 + 1]) / (CP[IP5] - CP[IP5 + 1]) * kk[IP5] + (1 - (0.05 - CP[IP5 + 1]) / (CP[IP5] - CP[IP5 + 1])) * kk[IP5 + 1] 
+    IP10 = np.nonzero(CP < 0.1)[0][-1]
+    percentile[i, 1] = (0.1 - CP[IP10 + 1]) / (CP[IP10] - CP[IP10 + 1]) * kk[IP10] + (1 - (0.1 - CP[IP10 + 1]) / (CP[IP10] - CP[IP10 + 1])) * kk[IP10 + 1]
+    
+    CPe = np.cumsum(Pe)
+    IPe5 = np.nonzero(CPe < 0.05)[0][-1] # occasionally this is empty!
+    percentile[i, 2] = (0.05 - CPe[IPe5 + 1]) / (CPe[IPe5] - CPe[IPe5 + 1]) * kk[IPe5] + (1 - (0.05 - CPe[IPe5 + 1]) / (CPe[IPe5] - CPe[IPe5 + 1])) * kk[IPe5 + 1]
+    IPe10 = np.nonzero(CPe < 0.1)[0][-1]
+    percentile[i, 3] = (0.1 - CPe[IPe10 + 1]) / (CPe[IPe10] - CPe[IPe10 + 1]) * kk[IPe10] + (1 - (0.1 - CPe[IPe10 + 1]) / (CPe[IPe10] - CPe[IPe10 + 1])) * kk[IPe10 + 1]
 
-    P = (1-Unemp(ZSim(i)))*Pe+Unemp(ZSim(i))*Pu;
-    CP = cumsum(P);
-    IP5 = find(CP<0.05,1,'last');
-    percentile(i,1)=(0.05-CP(IP5+1))/(CP(IP5)-CP(IP5+1))*kk(IP5)+(1-(0.05-CP(IP5+1))/(CP(IP5)-CP(IP5+1)))*kk(IP5+1);
-    IP10 = find(CP<0.1,1,'last');
-    percentile(i,2)=(0.1-CP(IP10+1))/(CP(IP10)-CP(IP10+1))*kk(IP10)+(1-(0.1-CP(IP10+1))/(CP(IP10)-CP(IP10+1)))*kk(IP10+1);
+    CPu = np.cumsum(Pu);
+    IPu5 = np.nonzero(CPu < 0.05)[0][-1] # occasionally this is empty!
+    percentile[i, 4] = (0.05 - CPu[IPu5 + 1]) / (CPu[IPu5] - CPu[IPu5 + 1]) * kk[IPu5] + (1 - (0.05 - CPu[IPu5 + 1]) / (CPu[IPu5] - CPu[IPu5 + 1])) * kk[IPu5 + 1]
+    IPu10 = np.nonzero(CPu < 0.1)[0][-1]
+    percentile[i, 5] = (0.1 - CPu[IPu10 + 1]) / (CPu[IPu10] - CPu[IPu10 + 1]) * kk[IPu10] + (1 - (0.1 - CPu[IPu10 + 1]) / (CPu[IPu10] - CPu[IPu10 + 1])) * kk[IPu10 + 1]
+    
+    moments[i, 0]  = kk.dot(P)
+    momentse[i, 0] = kk.dot(Pe)
+    momentsu[i, 0] = kk.dot(Pu)
+    
+    for j in range(2, 5):
+        moments[i, j] = (((kk**j).T).dot(P))**(1 / j) / moments[i, 0]
+        momentse[i, j] = (((kk**j).T).dot(Pe))**(1 / j) / momentse[i, 0]
+        momentsu[i, j] = (((kk**j).T).dot(Pu))**(1 / j) / momentsu[i, 0]
 
-    CPe = cumsum(Pe);
-    IPe5 = find(CPe<0.05,1,'last');
-    percentile(i,3)=(0.05-CPe(IPe5+1))/(CPe(IPe5)-CPe(IPe5+1))*kk(IPe5)+(1-(0.05-CPe(IPe5+1))/(CPe(IPe5)-CPe(IPe5+1)))*kk(IPe5+1);
-    IPe10 = find(CPe<0.1,1,'last');
-    percentile(i,4)=(0.1-CPe(IPe10+1))/(CPe(IPe10)-CPe(IPe10+1))*kk(IPe10)+(1-(0.1-CPe(IPe10+1))/(CPe(IPe10)-CPe(IPe10+1)))*kk(IPe10+1);
-
-    CPu = cumsum(Pu);
-    IPu5 = find(CPu<0.05,1,'last');
-    percentile(i,5)=(0.05-CPu(IPu5+1))/(CPu(IPu5)-CPu(IPu5+1))*kk(IPu5)+(1-(0.05-CPu(IPu5+1))/(CPu(IPu5)-CPu(IPu5+1)))*kk(IPu5+1);
-    IPu10 = find(CPu<0.1,1,'last');
-    percentile(i,6)=(0.1-CPu(IPu10+1))/(CPu(IPu10)-CPu(IPu10+1))*kk(IPu10)+(1-(0.1-CPu(IPu10+1))/(CPu(IPu10)-CPu(IPu10+1)))*kk(IPu10+1);
-
-    moments(i,1) = kk'*P;
-    momentse(i,1) = kk'*Pe;
-    momentsu(i,1) = kk'*Pu;
-    for j in range(2, 5 + 1):
-        moments(i,j) = (((kk.^j)'*P))^(1/j)/moments(i,1);
-        momentse(i,j) = (((kk.^j)'*Pe))^(1/j)/momentse(i,1);
-        momentsu(i,j) = (((kk.^j)'*Pu))^(1/j)/momentsu(i,1);
-
+    Ie = np.empty(NDist, dtype='int')
+    Iu = np.empty(NDist, dtype='int')
+    
     for j in range(NDist):
-        Ie(j,1) = find(kprimeE(j)>=kk,1,'last');
-        Iu(j,1) = find(kprimeU(j)>=kk,1,'last');
+        Ie[j] = np.nonzero(kprimeE[j] >= kk)[0][-1]
+        Iu[j] = np.nonzero(kprimeU[j] >= kk)[0][-1]
 
-    Ie = min(Ie,NDist-1);
-    Iu = min(Iu,NDist-1);
+    # careful with indexing!
+    Ie = np.minimum(Ie, NDist - 2)
+    Iu = np.minimum(Iu, NDist - 2)
 
-    rhoE = (kprimeE-kk(Ie+1))./(kk(Ie)-kk(Ie+1));
+    rhoE = (kprimeE - kk[Ie + 1]) / (kk[Ie] - kk[Ie + 1])
+    rhoU = (kprimeU - kk[Iu + 1]) / (kk[Iu] - kk[Iu + 1])
 
-    rhoU = (kprimeU-kk(Iu+1))./(kk(Iu)-kk(Iu+1));
-
-    Le1 = zeros(NDist,1);
-    Le2 = Le1;
-    Lu1 = Le1;
-    Lu2 = Le1;
+    Le1 = np.zeros((NDist, 1))
+    Le2 = np.zeros((NDist, 1))
+    Lu1 = np.zeros((NDist, 1))
+    Lu2 = np.zeros((NDist, 1))
 
     for jj in range(NDist):
-        Le1(Ie(jj)) = rhoE(jj)*Pe(jj)+Le1(Ie(jj));
-        Le2(Ie(jj)+1) = (1-rhoE(jj))*Pe(jj)+Le2(Ie(jj)+1);
-        Lu1(Iu(jj)) = rhoU(jj)*Pu(jj)+Lu1(Iu(jj));
-        Lu2(Iu(jj)+1) = (1-rhoU(jj))*Pu(jj)+Lu2(Iu(jj)+1);
+        Le1[Ie[jj]]     = rhoE[jj] * Pe[jj] + Le1[Ie[jj]]
+        Le2[Ie[jj] + 1] = (1 - rhoE[jj]) * Pe[jj] + Le2[Ie[jj] + 1]
+        Lu1[Iu[jj]]     = rhoU[jj] * Pu[jj] + Lu1[Iu[jj]]
+        Lu2[Iu[jj] + 1] = (1 - rhoU[jj]) * Pu[jj] + Lu2[Iu[jj] + 1]
  
-    PPe = Le1+Le2;
-    PPu = Lu1+Lu2;
+    PPe = Le1 + Le2
+    PPu = Lu1 + Lu2
 
-    if ZSim(i)==1
-        if ZSim(i+1)==1
-            KeSim(i+1) = (P11(1,1)*(1-UnempG)*KpeSim+P11(2,1)*UnempG*KpuSim)./(1-UnempG);
-            KuSim(i+1) = (P11(1,2)*(1-UnempG)*KpeSim+P11(2,2)*UnempG*KpuSim)./(UnempG);
-            KeFit(i+1) = (P11(1,1)*(1-UnempG)*KpeFit+P11(2,1)*UnempG*KpuFit)./(1-UnempG);
-            KuFit(i+1) = (P11(1,2)*(1-UnempG)*KpeFit+P11(2,2)*UnempG*KpuFit)./(UnempG);
-            Pe = (P11(1,1)*(1-UnempG)*PPe+P11(2,1)*UnempG*PPu)./(1-UnempG);
-            Pu = (P11(1,2)*(1-UnempG)*PPe+P11(2,2)*UnempG*PPu)./(UnempG);
-            KeImp(i+1) = kk'*Pe;
-            KuImp(i+1) = kk'*Pu;
-        end
-        if ZSim(i+1)==2
-            KeSim(i+1) = (P10(1,1)*(1-UnempG)*KpeSim+P10(2,1)*UnempG*KpuSim)./(1-UnempB);
-            KuSim(i+1) = (P10(1,2)*(1-UnempG)*KpeSim+P10(2,2)*UnempG*KpuSim)./(UnempB);
-            KeFit(i+1) = (P10(1,1)*(1-UnempG)*KpeFit+P10(2,1)*UnempG*KpuFit)./(1-UnempB);
-            KuFit(i+1) = (P10(1,2)*(1-UnempG)*KpeFit+P10(2,2)*UnempG*KpuFit)./(UnempB);
-            Pe = (P10(1,1)*(1-UnempG)*PPe+P10(2,1)*UnempG*PPu)./(1-UnempB);
-            Pu = (P10(1,2)*(1-UnempG)*PPe+P10(2,2)*UnempG*PPu)./(UnempB);
-            KeImp(i+1) = kk'*Pe;
-            KuImp(i+1) = kk'*Pu;
-        end
-    end
-    if ZSim(i)==2
-        if ZSim(i+1)==1
-            KeSim(i+1) = (P01(1,1)*(1-UnempB)*KpeSim+P01(2,1)*UnempB*KpuSim)./(1-UnempG);
-            KuSim(i+1) = (P01(1,2)*(1-UnempB)*KpeSim+P01(2,2)*UnempB*KpuSim)./(UnempG);
-            KeFit(i+1) = (P01(1,1)*(1-UnempB)*KpeFit+P01(2,1)*UnempB*KpuFit)./(1-UnempG);
-            KuFit(i+1) = (P01(1,2)*(1-UnempB)*KpeFit+P01(2,2)*UnempB*KpuFit)./(UnempG);
-            Pe = (P01(1,1)*(1-UnempB)*PPe+P01(2,1)*UnempB*PPu)./(1-UnempG);
-            Pu = (P01(1,2)*(1-UnempB)*PPe+P01(2,2)*UnempB*PPu)./(UnempG);
-            KeImp(i+1) = kk'*Pe;
-            KuImp(i+1) = kk'*Pu;
-        end
-        if ZSim(i+1)==2
-            KeSim(i+1) = (P00(1,1)*(1-UnempB)*KpeSim+P00(2,1)*UnempB*KpuSim)./(1-UnempB);
-            KuSim(i+1) = (P00(1,2)*(1-UnempB)*KpeSim+P00(2,2)*UnempB*KpuSim)./(UnempB);
-            KeFit(i+1) = (P00(1,1)*(1-UnempB)*KpeFit+P00(2,1)*UnempB*KpuFit)./(1-UnempB);
-            KuFit(i+1) = (P00(1,2)*(1-UnempB)*KpeFit+P00(2,2)*UnempB*KpuFit)./(UnempB);
-            Pe = (P00(1,1)*(1-UnempB)*PPe+P00(2,1)*UnempB*PPu)./(1-UnempB);
-            Pu = (P00(1,2)*(1-UnempB)*PPe+P00(2,2)*UnempB*PPu)./(UnempB);
-            KeImp(i+1) = kk'*Pe;
-            KuImp(i+1) = kk'*Pu;
-        end
-    end
-end
+    if ZSim[i] == 0:
+        if ZSim[i + 1] == 0:
+            KeSim[i + 1] = (P11[0, 0] * (1-UnempG) * KpeSim + P11[1, 0] * UnempG * KpuSim) / (1 - UnempG)
+            KuSim[i + 1] = (P11[0, 1] * (1-UnempG) * KpeSim + P11[1, 1] * UnempG * KpuSim) / UnempG
+            KeFit[i + 1] = (P11[0, 0] * (1-UnempG) * KpeFit + P11[1, 0] * UnempG * KpuFit) / (1 - UnempG)
+            KuFit[i + 1] = (P11[0, 1] * (1-UnempG) * KpeFit + P11[1, 1] * UnempG * KpuFit) / UnempG
+            Pe           = (P11[0, 0] * (1-UnempG) * PPe + P11[1, 0] * UnempG * PPu) / (1 - UnempG)
+            Pu           = (P11[0, 1] * (1-UnempG) * PPe + P11[1, 1] * UnempG * PPu) / UnempG
+            KeImp[i + 1] = kk.dot(Pe)
+            KuImp[i + 1] = kk.dot(Pu)
+        
+        if ZSim[i + 1] == 1:
+            KeSim[i + 1] = (P10[0, 0] * (1 - UnempG) * KpeSim + P10[1, 0] * UnempG * KpuSim) / (1 - UnempB)
+            KuSim[i + 1] = (P10[0, 1] * (1 - UnempG) * KpeSim + P10[1, 1] * UnempG * KpuSim) / UnempB
+            KeFit[i + 1] = (P10[0, 0] * (1 - UnempG) * KpeFit + P10[1, 0] * UnempG * KpuFit) / (1 - UnempB)
+            KuFit[i + 1] = (P10[0, 1] * (1 - UnempG) * KpeFit + P10[1, 1] * UnempG * KpuFit) / UnempB
+            Pe           = (P10[0, 0] * (1 - UnempG) * PPe + P10[1, 0] * UnempG * PPu) / (1 - UnempB)
+            Pu           = (P10[0, 1] * (1 - UnempG) * PPe + P10[1, 1] * UnempG * PPu) / UnempB
+            KeImp[i + 1] = kk.dot(Pe)
+            KuImp[i + 1] = kk.dot(Pu)
+
+    if ZSim[i] == 1:
+        if ZSim[i + 1] == 0:
+            KeSim[i + 1] = (P01[0, 0] * (1 - UnempB) * KpeSim + P01[1, 0] * UnempB * KpuSim) / (1 - UnempG)
+            KuSim[i + 1] = (P01[0, 1] * (1 - UnempB) * KpeSim + P01[1, 1] * UnempB * KpuSim) / UnempG
+            KeFit[i + 1] = (P01[0, 0] * (1 - UnempB) * KpeFit + P01[1, 0] * UnempB * KpuFit) / (1 - UnempG)
+            KuFit[i + 1] = (P01[0, 1] * (1 - UnempB) * KpeFit + P01[1, 1] * UnempB * KpuFit) / UnempG 
+            Pe           = (P01[0, 0] * (1 - UnempB) * PPe + P01[1, 0] * UnempB * PPu) / (1 - UnempG)
+            Pu           = (P01[0, 1] * (1 - UnempB) * PPe + P01[1, 1] * UnempB * PPu) / UnempG
+            KeImp[i + 1] = kk.dot(Pe)
+            KuImp[i + 1] = kk.dot(Pu)
+        
+        if ZSim[i + 1] == 1:
+            KeSim[i + 1] = (P00[0, 0] * (1 - UnempB) * KpeSim + P00[1, 0] * UnempB * KpuSim) / (1 - UnempB)
+            KuSim[i + 1] = (P00[0, 1] * (1 - UnempB) * KpeSim + P00[1, 1] * UnempB * KpuSim) / UnempB
+            KeFit[i + 1] = (P00[0, 0] * (1 - UnempB) * KpeFit + P00[1, 0] * UnempB * KpuFit) / (1 - UnempB)
+            KuFit[i + 1] = (P00[0, 1] * (1 - UnempB) * KpeFit + P00[1, 1] * UnempB * KpuFit) / UnempB
+            Pe           = (P00[0, 0] * (1 - UnempB) * PPe + P00[1, 0] * UnempB * PPu) / (1 - UnempB)
+            Pu           = (P00[0, 1] * (1 - UnempB) * PPe + P00[1, 1] * UnempB * PPu) / UnempB
+            KeImp[i + 1] = kk.dot(Pe)
+            KuImp[i + 1] = kk.dot(Pu)
 
 KSim = (1 - Unemp[ZSim]) * KeSim + Unemp[ZSim] * KuSim
 KImp = (1 - Unemp[ZSim]) * KeImp + Unemp[ZSim] * KuImp
 KFit = (1 - Unemp[ZSim]) * KeFit + Unemp[ZSim] * KuFit
 
 ZZ = np.array([[zg], [zb]])
-Y  = ZZ[ZSim] * (KImp**alpha) * (((1 - Unemp[ZSim]) * h)**(1 - alpha))
+Y  = ZZ[ZSim] * KImp**alpha * ((1 - Unemp[ZSim]) * h)**(1 - alpha)
 C  = Y[:-1] - KImp[1:] + (1 - delta) * KImp[1:-1]
 
 Yind = Cind + Kind[1:] - (1 - delta) * Kind[:-1]
 
-print 'Correlation of individual and aggregate consumption:', np.corrcoef([Cind,C])
-print 'Correlation of individual consumption and aggregate income:', np.corrcoef([Cind,Y(1:end-1)])
-print 'Correlation of individual consumption and aggregate capital:', np.corrcoef([Cind,KImp[:-1]])
-print 'Correlation of individual consumption and individual income:', np.corrcoef([Cind,Yind])
-print 'Correlation of individual consumption and individual capital:', np.corrcoef([Cind,Kind[:-1]])
-print 'Standard deviation of individual consumption:', np.std(Cind)
-print 'Standard deviation of individual capital:', np.std(Kind)
+print 'Correlation of individual and aggregate consumption:', np.corrcoef(Cind, C)
+#print 'Correlation of individual consumption and aggregate income:', np.corrcoef([Cind,Y(1:end-1)])
+#print 'Correlation of individual consumption and aggregate capital:', np.corrcoef([Cind,KImp[:-1]])
+#print 'Correlation of individual consumption and individual income:', np.corrcoef([Cind,Yind])
+#print 'Correlation of individual consumption and individual capital:', np.corrcoef([Cind,Kind[:-1]])
+#print 'Standard deviation of individual consumption:', np.std(Cind)
+#print 'Standard deviation of individual capital:', np.std(Kind)
 #print 'Autocorrelation of individual consumption:', corrcoef([Cind(1:end-3),Cind(2:end-2),Cind(3:end-1),Cind(4:end)])
 #print 'Autocorrelation of individual capital:', corrcoef([Kind(1:end-3),Kind(2:end-2),Kind(3:end-1),Kind(4:end)])
 #print 'Autocorrelation of individual consumption growth:', cgrowth = log(Cind(2:end))-log(Cind(1:end-1));
 #corrcoef([cgrowth(1:end-3),cgrowth(2:end-2),cgrowth(3:end-1),cgrowth(4:end)])
-print 'Max error Ke (%)', 100 * np.max(np.abs(np.log(KeSim) - np.log(KeImp)))
-print 'Max error Ku (%)', 100 * np.max(np.abs(np.log(KuSim) - np.log(KuImp)))
-print 'Mean error Ke (%)', 100 * np.mean(np.abs(np.log(KeSim) - np.log(KeImp)))
-print 'Mean error Ku (%)', 100 * np.mean(np.abs(np.log(KuSim) - np.log(KuImp)))
-print 'R-Square K', 1 - np.var(KImp - KFit) / np.var(KImp)
-print 'R-Square Ke', 1 - np.var(KeImp - KeFit) / np.var(KeImp)
-print 'R-Square Ku', 1 - np.var(KuImp - KuFit) / np.var(KuImp)
+#print 'Max error Ke (%)', 100 * np.max(np.abs(np.log(KeSim) - np.log(KeImp)))
+#print 'Max error Ku (%)', 100 * np.max(np.abs(np.log(KuSim) - np.log(KuImp)))
+#print 'Mean error Ke (%)', 100 * np.mean(np.abs(np.log(KeSim) - np.log(KeImp)))
+#print 'Mean error Ku (%)', 100 * np.mean(np.abs(np.log(KuSim) - np.log(KuImp)))
+#print 'R-Square K', 1 - np.var(KImp - KFit) / np.var(KImp)
+#print 'R-Square Ke', 1 - np.var(KeImp - KeFit) / np.var(KeImp)
+#print 'R-Square Ku', 1 - np.var(KuImp - KuFit) / np.var(KuImp)
+
