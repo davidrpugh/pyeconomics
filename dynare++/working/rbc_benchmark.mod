@@ -10,8 +10,9 @@
    w: real wage
    r: net interest rate
    l: labor supply
+   check1: zero profit condition
 */
-var k, c, z, y, i, w, r, l;
+var k, c, z, y, i, w, r, l; //check1 
 
 ///// Exogenous variables /////
 
@@ -76,6 +77,9 @@ k = (1 - delta) * k(-1) + i;
 
 // productivity process
 z = rho * z(-1) + eps;
+
+// check that zero profit condition holds
+//check1 = y - w * l - (r + delta) * k(-1);
 end;
 
 ////////// Initial values for computing steady state //////////
@@ -89,6 +93,7 @@ y = kss^alpha * lss^(1 - alpha);
 i = delta * kss;
 w = (1 - alpha) *kss^alpha * lss^(-alpha);
 r = (1 / beta) - 1;
+check1 = 0.0;
 end;
 
 ////////// Variance covariance matrix //////////

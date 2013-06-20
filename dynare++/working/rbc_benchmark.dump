@@ -1,0 +1,45 @@
+var k c z y i w r l;
+
+varexo eps;
+
+parameters beta theta omega alpha delta rho sigma kss lss;
+
+beta=0.99;
+theta=1;
+omega=0.357;
+alpha=0.33;
+delta=0.025;
+rho=0.95;
+sigma=0.01;
+kss=10.08843537937415;
+lss=0.3558729450714222;
+
+
+model;
+// Equation 0
+0 = y - (exp(z) * (k(-1) ^ alpha)) * (l ^ (1 - alpha));
+// Equation 1
+0 = w - (1 - alpha) * (y / l);
+// Equation 2
+0 = r - (alpha * (y / k(-1)) - delta);
+// Equation 3
+0 = y - (c + i);
+// Equation 4
+0 = ((c ^ (omega - 1)) * ((1 - l) ^ (1 - omega))) * ((((1 - l) ^ (1 - omega)) * (c ^ omega)) ^ -(theta)) - (((beta * (c(1) ^ (omega - 1))) * ((1 - l(1)) ^ (1 - omega))) * ((((1 - l(1)) ^ (1 - omega)) * (c(1) ^ omega)) ^ -(theta))) * (1 + r(1));
+// Equation 5
+0 = w * (omega * (1 - l)) - c * (1 - omega);
+// Equation 6
+0 = k - (i + k(-1) * (1 - delta));
+// Equation 7
+0 = z - (rho * z(-1) + eps);
+end;
+initval;
+y=1.073073551984243;
+i=0.2522108844843537;
+w=2.020269564704197;
+k=10.08843537937415;
+z=0;
+c=0.8208626674998896;
+r=0.01010101010101017;
+l=0.3558729450714222;
+end;

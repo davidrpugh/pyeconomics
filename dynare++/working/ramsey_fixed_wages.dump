@@ -1,0 +1,40 @@
+var k c l z y i r;
+
+varexo eps;
+
+parameters beta theta alpha delta w rho sigma;
+
+beta=0.9896;
+theta=2;
+alpha=0.4;
+delta=0.0196;
+w=3.365561290136913;
+rho=0.95;
+sigma=0.007;
+
+
+model;
+// Equation 0
+0 = y - (exp(z) * (k(-1) ^ alpha)) * (l ^ (1 - alpha));
+// Equation 1
+0 = w - (1 - alpha) * (y / l);
+// Equation 2
+0 = r - ((l ^ (1 - alpha)) * ((exp(z) * alpha) * (k(-1) ^ (alpha - 1))) - delta);
+// Equation 3
+0 = y - (c + i);
+// Equation 4
+0 = c ^ -(theta) - (beta * (c(1) ^ -(theta))) * (1 + r(1));
+// Equation 5
+0 = k - (i + k(-1) * (1 - delta));
+// Equation 6
+0 = z - (rho * z(-1) + eps);
+end;
+initval;
+l=1;
+y=5.609268816894855;
+i=4.869653510761448;
+k=74.51876243380565;
+z=0;
+c=0.7396153061334074;
+r=1.106050953159718;
+end;

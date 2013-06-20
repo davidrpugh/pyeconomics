@@ -6,15 +6,15 @@
    
    k: capital
    c: consumption
+   l: labor 
    z: productivity
    y: output
    i: investment
-   w: real wage
    r: net interest rate
    check1: zero profit condition
 
 */
-var k, c, z, y, i, w, r; //check1;
+var k, c, l, z, y, i, r; //check1;
 
 ///// Exogenous variables /////
 
@@ -22,7 +22,7 @@ var k, c, z, y, i, w, r; //check1;
 varexo eps;
 
 ////////// Declare parameters //////////
-parameters beta, theta, alpha, delta, rho, sigma;
+parameters beta, theta, alpha, delta, w, rho, sigma;
 
 // discount factor
 beta  = 0.9896;
@@ -36,6 +36,9 @@ alpha = 0.40;
 // depreciation rate of capital
 delta = 0.0196;
 
+// real wage is assumed fixed!
+w = (1 - alpha) * ((alpha * beta) / (1 - beta * (1 - delta)))^(alpha / (1 - alpha)); 
+
 // persistence of productivity process
 rho   = 0.95;
 
@@ -46,13 +49,13 @@ sigma = 0.007;
 
 model;
 // production
-y = exp(z) * k(-1)^alpha;
+y = exp(z) * k(-1)^alpha * l^(1 - alpha);
 
-// real wage
-w = (1 - alpha) * y;
+// With fixed wages, equilibrium is determined by firm's labor demand
+w = (1 - alpha) * (y / l);
 
 // net marginal product of capital
-r = alpha * exp(z) * k(-1)^(alpha - 1) - delta;
+r = alpha * exp(z) * k(-1)^(alpha - 1) * l^(1 - alpha) - delta;
 
 // resource constraint
 y = c + i;
@@ -74,11 +77,11 @@ end;
 initval;
 k = (alpha * beta / (1 - beta * (1 - delta)))^(1 / (1 - alpha));
 c = 1 - alpha * beta * delta / (1 - beta * (1 - delta));
+l = 1.0;
 z = 0.0;
 y = (alpha * beta / (1 - beta * (1 - delta)))^(alpha / (1 - alpha));
 i = (alpha * beta / (1 - beta * (1 - delta)))^(alpha / (1 - alpha)) + 
     (alpha * beta * delta / (1 - beta * (1 - delta))) - 1;
-w = (1 - alpha) * (alpha * beta / (1 - beta * (1 - delta)))^(alpha / (1 - alpha));
 r = alpha * (alpha * beta / (1 - beta * (1 - delta)))^alpha - delta;
 //check1 = 0.0;
 end;

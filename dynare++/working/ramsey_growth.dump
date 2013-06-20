@@ -1,0 +1,38 @@
+var y k c i z check1;
+
+varexo eps;
+
+parameters beta theta alpha delta n g rho sigma;
+
+beta=0.9896;
+theta=2;
+alpha=0.4;
+delta=0.0196;
+n=0.003772235764414875;
+g=0.003187545936232102;
+rho=0.95;
+sigma=0.01;
+
+
+model;
+// Equation 0
+0 = y - ((z(-1) * k(-1)) / (((1 + g) * (1 + n)) * z)) ^ alpha;
+// Equation 1
+0 = y - (c + i);
+// Equation 2
+0 = k - (i + ((z(-1) * k(-1)) / (((1 + g) * (1 + n)) * z)) * (1 - delta));
+// Equation 3
+0 = 1 - ((beta * ((1 + g) ^ -(theta))) * (((c(1) * z(1)) / (z * c)) ^ -(theta))) * (1 + alpha * (((z * k) / (((1 + g) * (1 + n)) * z(1))) ^ (alpha - 1)) - delta);
+// Equation 4
+0 = z - (z(-1) ^ rho) * exp(eps);
+// Equation 5
+0 = check1 - (y - (((z(-1) * k(-1)) / (((1 + g) * (1 + n)) * z)) ^ alpha) * (1 - alpha) - ((z(-1) * k(-1)) / (((1 + g) * (1 + n)) * z)) * (delta + alpha * (((z(-1) * k(-1)) / (((1 + g) * (1 + n)) * z)) ^ (alpha - 1)) - delta));
+end;
+initval;
+y=4.928212679582933;
+i=1.432665079763971;
+check1=0;
+k=54.2926344316951;
+z=1;
+c=3.495547599818963;
+end;
