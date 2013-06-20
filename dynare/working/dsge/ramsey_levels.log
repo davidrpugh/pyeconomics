@@ -1,0 +1,71 @@
+ 
+STEADY-STATE RESULTS:
+ 
+k      		 54.2926
+c      		 3.49555
+z      		 1
+check1 		 0
+ 
+EIGENVALUES:
+         Modulus             Real        Imaginary
+
+            0.95             0.95                0
+          0.9784           0.9784                0
+           1.032            1.032                0
+             Inf              Inf                0
+
+
+There are 2 eigenvalue(s) larger than 1 in modulus 
+for 2 forward-looking variable(s)
+ 
+The rank condition is verified.
+ 
+ 
+MODEL SUMMARY
+ 
+  Number of variables:         4
+  Number of stochastic shocks: 1
+  Number of state variables:   2
+  Number of jumpers:           2
+  Number of static variables:  1
+
+
+MATRIX OF COVARIANCE OF EXOGENOUS SHOCKS
+
+Variables      eps   
+eps          0.000100
+ 
+POLICY AND TRANSITION FUNCTIONS
+                                  k               c               z               check1
+Constant                   54.292634        3.495548        1.000000               0
+k(-1)                       0.978427        0.031494               0               0
+z(-1)                       3.666281       -0.924718        0.950000               0
+eps                       -52.057980       -2.773275        1.000000               0
+
+
+THEORETICAL MOMENTS
+
+VARIABLE      MEAN    STD. DEV.   VARIANCE 
+k             54.2926     1.6666     2.7774
+c              3.4955     0.0758     0.0058
+z              1.0000     0.0320     0.0010
+check1         0.0000     0.0000     0.0000
+ 
+
+
+MATRIX OF CORRELATIONS
+
+Variables      k       c       z   
+k            1.0000  0.9086 -0.4342
+c            0.9086  1.0000 -0.7707
+z           -0.4342 -0.7707  1.0000
+ 
+
+
+COEFFICIENTS OF AUTOCORRELATION
+
+Order      1       2       3       4       5   
+k        0.9478  0.8983  0.8513  0.8068  0.7644
+c        0.9299  0.8637  0.8012  0.7423  0.6867
+z        0.9500  0.9025  0.8574  0.8145  0.7738
+Total computing time : 0h00m05s

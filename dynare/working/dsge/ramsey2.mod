@@ -42,11 +42,15 @@ sigma = 0.01;
 
 ///// Endogenous variables /////
 
+// y: output per effective worker
 // k: capital per effective worker
 // c: consumption per effective worker
-// z: productivity process
+// i: investement per effective worker
+// r: net interest rate 
+// w: real wage
+// z: productivity
 // check1: zero profit condition
-var k, c, z, check1; 
+var y, k, c, i, r, w, z, check1; 
 
 ///// Exogenous variables /////
 
@@ -55,39 +59,50 @@ varexo eps;
 
 ////////// The model //////////
 model;
+// aggregate resource constraint
+y = c + i;
+
+// production function 
+y = ((z(-1) * k(-1)) / ((1 + g) * (1 + n) * z))^alpha;
+
+// net interest rate
+r = alpha * ((z(-1) * k(-1)) / ((1 + g) * (1 + n) * z))^(alpha - 1) - delta;
+
+// real wage 
+w = (1 - alpha) * y;
 
 // equation of motion for capital
-k = (1 - delta) * ((z(-1) * k(-1)) / ((1 + g) * (1 + n) * z)) +
-    ((z(-1) * k(-1)) / ((1 + g) * (1 + n) * z))^alpha - c;
+k = (1 - delta) * ((z(-1) * k(-1)) / ((1 + g) * (1 + n) * z)) + i;
 
 // consumption Euler equation
-1 = beta * (1 + g)^(-theta) * ((c(+1) * z(+1)) / (c * z))^(-theta) *
-    (1 + alpha * ((z * k) / ((1 + g) * (1 + n) * z(+1)))^(alpha - 1) - delta);
+1 = beta * (1 + g)^(-theta) * ((c(+1) * z(+1)) / (c * z))^(-theta) * (1 + r(+1));
 
 // productivity process
 z = z(-1)^rho * exp(eps);
 
 // check that zero profit condition holds
-check1 = ((z(-1) * k(-1)) / ((1 + g) * (1 + n) * z))^alpha -
-         (1 - alpha) * ((z(-1) * k(-1)) / ((1 + g) * (1 + n) * z))^alpha -
-         (alpha * ((z(-1) * k(-1)) / ((1 + g) * (1 + n) * z))^(alpha - 1) - delta + delta) *
-         ((z(-1) * k(-1)) / ((1 + g) * (1 + n) * z));
+check1 = y - w - (r + delta) * ((z(-1) * k(-1)) / ((1 + g) * (1 + n) * z));
 end;
 
 ////////// Find the steady state //////////
 
-// Use known analyic solution for steady state values
-steady_state_model;
+kss = 1.0;
+yss = (kss / ((1 + g) * (1 + n)))^alpha;
+rss = alpha * (kss / ((1 + g) * (1 + n)))^(alpha - 1) - delta;
+wss = (1 - alpha) * yss;
+iss = (1 - delta) * (kss / ((1 + g) * (1 + n))) - kss;
+css = yss - iss;
+zss = 1.0;
+check1ss = 0.0;
 
-// capital per effective person
-val = alpha * beta * (1 + g)^(-theta) / (1 - beta * (1 + g)^(-theta) * (1 - delta)); // local var
-k = (1 + g) * (1 + n) * val^(1 / (1 - alpha));
-
-// productivity
-z = 1.0;
-
-// consumption per effective person
-c = (1 - delta) * (k / ((1 + g) * (1 + n))) + (k / ((1 + g) * (1 + n)))^alpha - k;
+initval;
+k = 1.0;
+y = yss;
+r = rss;
+w = wss;
+i = iss;
+z = zss;
+check1 = check1ss;
 end;
 
 steady;
