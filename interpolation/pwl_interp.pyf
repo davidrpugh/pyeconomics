@@ -1,0 +1,51 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module pwl_interp ! in 
+    interface  ! in :pwl_interp
+        subroutine pwl_basis_1d(nd,xd,k,ni,xi,bk) ! in :pwl_interp_1d:pwl_interp_1d.f90
+            integer(kind=4), optional,check(len(xd)>=nd),depend(xd) :: nd=len(xd)
+            real(kind=8) dimension(nd), intent(in) :: xd
+            integer(kind=4), intent(in) :: k
+            integer(kind=4), optional,check(len(xi)>=ni),depend(xi) :: ni=len(xi)
+            real(kind=8) dimension(ni), intent(in) :: xi
+            real(kind=8) dimension(ni), intent(out), depend(ni) :: bk
+        end subroutine pwl_basis_1d
+        subroutine pwl_interp_1d(nd,xd,yd,ni,xi,yi) ! in :pwl_interp_1d:pwl_interp_1d.f90
+            integer(kind=4), optional,check(len(xd)>=nd),depend(xd) :: nd=len(xd)
+            real(kind=8) dimension(nd), intent(in) :: xd
+            real(kind=8) dimension(nd), intent(in), depend(nd) :: yd
+            integer(kind=4), optional,check(len(xi)>=ni),depend(xi) :: ni=len(xi)
+            real(kind=8) dimension(ni), intent(in) :: xi
+            real(kind=8) dimension(ni), intent(out), depend(ni) :: yi
+        end subroutine pwl_interp_1d
+        subroutine pwl_interp_2d(nxd,nyd,xd,yd,zd,ni,xi,yi,zi) ! in :pwl_interp_2d:pwl_interp_2d.f90
+            integer(kind=4), optional,check(len(xd)>=nxd),depend(xd) :: nxd=len(xd)
+            integer(kind=4), optional,check(len(yd)>=nyd),depend(yd) :: nyd=len(yd)
+            real(kind=8) dimension(nxd), intent(in) :: xd
+            real(kind=8) dimension(nyd), intent(in) :: yd
+            real(kind=8) dimension(nxd,nyd), intent(in), depend(nxd,nyd) :: zd
+            integer(kind=4), optional,check(len(xi)>=ni),depend(xi) :: ni=len(xi)
+            real(kind=8) dimension(ni), intent(in) :: xi
+            real(kind=8) dimension(ni), intent(in), depend(ni) :: yi
+            real(kind=8) dimension(ni), intent(out), depend(ni) :: zi
+        end subroutine pwl_interp_2d
+        subroutine pwl_interp_3d(nwd,nxd,nyd,wd,xd,yd,zd,ni,wi,xi,yi,zi) ! in :pwl_interp:pwl_interp_3d.f90
+            integer(kind=4), optional,check(len(wd)>=nwd),depend(wd) :: nwd=len(wd)
+            integer(kind=4), optional,check(len(xd)>=nxd),depend(xd) :: nxd=len(xd)
+            integer(kind=4), optional,check(len(yd)>=nyd),depend(yd) :: nyd=len(yd)
+            real(kind=8) dimension(nwd), intent(in) :: wd
+            real(kind=8) dimension(nxd), intent(in) :: xd
+            real(kind=8) dimension(nyd), intent(in) :: yd
+            real(kind=8) dimension(nwd,nxd,nyd),depend(nwd,nxd,nyd) :: zd
+            integer(kind=4), optional,check(len(wi)>=ni),depend(wi) :: ni=len(wi)
+            real(kind=8) dimension(ni), intent(in) :: wi
+            real(kind=8) dimension(ni), intent(in), depend(ni) :: xi
+            real(kind=8) dimension(ni), intent(in), depend(ni) :: yi
+            real(kind=8) dimension(ni), intent(out), depend(ni) :: zi
+        end subroutine pwl_interp_3d
+    end interface 
+end python module pwl_interp
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/
