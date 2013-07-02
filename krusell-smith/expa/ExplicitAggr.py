@@ -1,8 +1,7 @@
 from __future__ import division
 import numpy as np
-from scipy import linalg
-
-from pyeconomics.interpolation import interpolate
+from scipy import linalg, ndimage
+from pyeconomics.interpolation import pwl_interp
 
 # Defining the transition matrix.
 
@@ -73,13 +72,12 @@ else:
 deltaZ = 0.01
 
 # Grid
-
 kmin   = phi
 kmax   = 200
 
 zg = 1 + deltaZ
 zb = 1 - deltaZ
-Z = np.array([[zg], [zb]])
+Z  = np.array([[zg], [zb]])
 ZZ = Z
 
 Kumin = 33
@@ -93,13 +91,12 @@ kp = np.exp(kptemp) - 1 + kmin
 Ke = np.linspace(Kemin, Kemax, NK).reshape((NK, 1))
 Ku = np.linspace(Kumin, Kumax, NK).reshape((NK, 1))
 
-# Initial policy functions
-
 # Individual policy function
 kpp1 = np.empty((2, 2, NK, Nk, NK))
 kpp2 = np.empty((2, 2, NK, Nk, NK))
 
 # multi-dimensional array indexing differs between NumPy and Matlab
+
 for ii in range(2):
     for i in range(2):
         for j in range(NK):
@@ -110,7 +107,7 @@ for ii in range(2):
 # Initial aggregate policy function (guess: unit root.)
 A = np.empty((2, 2, 2))
 A[0] = linalg.inv(np.array([[P11[0, 0], P11[1,0] * UnempG / (1 - UnempG)], 
-                                [P11[0, 1] * (1 - UnempG) / UnempG, P11[1, 1]]]))
+                            [P11[0, 1] * (1 - UnempG) / UnempG, P11[1, 1]]]))
 A[1] = linalg.inv(np.array([[P00[0,0], P00[1,0] * UnempB / (1 - UnempB)], 
                             [P00[0, 1] * (1 - UnempB)/UnempB, P00[1, 1]]]))
 
@@ -153,13 +150,12 @@ KpuN = np.maximum(KpuN, np.min(Ku))
 
 ConvCrit = 1
 s = 0
+tol = 1e-6
 
-print 'Solving the individual and aggregate problem until ConvCrit < 1e-4'
+print 'Solving the individual and aggregate problem until ConvCrit < %g' %tol
 
-while ConvCrit > 1e-4:
+while ConvCrit > tol:
     s = s + 1
-
-    # not sure whether or not this should be inside the while loop?
     k = np.empty((2, 2, NK, Nk, NK))
     
     for i in range(2): # pages
@@ -206,9 +202,9 @@ while ConvCrit > 1e-4:
                 if np.min(k[i, 0, l, :,j]) > 0:
                     x = np.append(0, x)
                     Y = np.append(0, Y)
-                    kpmat[i, 0, l, :, j] = [interpolate.linear.lininterp1(val, x, Y) for val in xi]
+                    kpmat[i, 0, l, :, j] = pwl_interp.pwl_interp_1d(x, Y, xi)
                 else:
-                    kpmat[i, 0, l, :, j] = [interpolate.linear.lininterp1(val, x, Y) for val in xi]
+                    kpmat[i, 0, l, :, j] = pwl_interp.pwl_interp_1d(x, Y, xi)
                 
                 x  = k[i, 1, l, :, j]
                 Y  = kp
@@ -216,9 +212,9 @@ while ConvCrit > 1e-4:
                 if np.min(k[i, 1, l, :, j]) > 0:
                     x = np.append(0, x)
                     Y = np.append(0, Y)
-                    kpmat[i, 1, l, :,j] = [interpolate.linear.lininterp1(val, x, Y) for val in xi]
+                    kpmat[i, 1, l, :,j] = pwl_interp.pwl_interp_1d(x, Y, xi)
                 else:
-                    kpmat[i, 1, l, :, j] = [interpolate.linear.lininterp1(val, x, Y) for val in xi]
+                    kpmat[i, 1, l, :, j] = pwl_interp.pwl_interp_1d(x, Y, xi)
     
     # Update the individual policy functions for t+1
     kpp2New = np.empty((2, 2, NK, Nk, NK))
@@ -226,13 +222,16 @@ while ConvCrit > 1e-4:
         for i in range(2):
             for j in range(NK):
                 for l in range(NK):
-                    kpp1[ii, i, l, :, j] = [interpolate.linear.lininterp3(KpeN[ii, i, j, l], kp[k, 0], KpuN[ii, i, j, l], Ke, kp, Ku, kpmat[i, 0, :, :, :]) for k in range(Nk)]
-                    kpp2New[ii, i, l, :, j] = [interpolate.linear.lininterp3(KpeN[ii, i, j, l], kp[k, 0], KpuN[ii, i, j, l], Ke, kp, Ku, kpmat[i, 1, :, :, :]) for k in range(Nk)]
-                                           
+                    kpp1[ii, i, l, :, j] = pwl_interp.pwl_interp_3d(Ke, kp, Ku, kpmat[i, 0, :, :, :], 
+                                                                    np.repeat(KpeN[ii, i, j, l], Nk), kp, np.repeat(KpuN[ii, i, j, l], Nk))
+                    kpp2New[ii, i, l, :, j] = pwl_interp.pwl_interp_3d(Ke, kp, Ku, kpmat[i, 1, :, :, :], 
+                                                                       np.repeat(KpeN[ii, i, j, l], Nk), kp, np.repeat(KpuN[ii, i, j, l], Nk))
     
     # Update the convergence measure:
     ConvCrit = np.max(np.abs(kpp2New[0, 0, 0, :, 0] - kpp2[0, 0, 0, :, 0]) / (1 + np.abs(kpp2[0, 0, 0, :, 0])))
-    print 'Current value of ConvCrit is', ConvCrit
+    
+    if s % 10 == 0:
+        print 'After %i iterations, the current value of ConvCrit is %g.' %(s, ConvCrit)
      
     kpp2 = kpp2New
      
@@ -244,10 +243,11 @@ while ConvCrit > 1e-4:
             for l in range(2):
                 x = kp
                 Y = kpmat[l, 0, j, :, i]
-                KpeNew[l, i, j] = interpolate.linear.lininterp1(Ke[i, 0], x, Y) + de
+                KpeNew[l, i, j] = pwl_interp.pwl_interp_1d(x, Y, Ke[i, 0]) + de
                 Y = kpmat[l, 1, j, :, i]
-                KpuNew[l, i, j] = interpolate.linear.lininterp1(Ku[j, 0], x, Y) + du
+                KpuNew[l, i, j] = pwl_interp.pwl_interp_1d(x, Y, Ku[j, 0]) + du
 
+    """
     # no idea what this conditional is doing!
     if s > 200:
         rho = 0;
@@ -276,6 +276,7 @@ while ConvCrit > 1e-4:
         KpeN = np.maximum(KpeN, np.min(Ke))
         KpuN = np.minimum(KpuN, np.max(Ku))
         KpuN = np.maximum(KpuN, np.min(Ku))
+    """
 
 print ('The individual and aggregate problem has converged. Simulation will ' + 
        'proceed until s=10000')
@@ -325,22 +326,24 @@ Wvec       = np.zeros((len(Z), 1))
 # Let's rock'n'roll
 
 s = 0
-SimLength = 100 - 1
+SimLength = len(Z) - 1
 for i in range(SimLength):
-    s = s + 1
-    if s % 10 == 0:
-        print "s =", s
-        
-    KpeSim = interpolate.linear.lininterp2(KuSim[i], KeSim[i], Ku, Ke, Kpe[ZSim[i], :, :])
-    KpuSim = interpolate.linear.lininterp2(KuSim[i], KeSim[i], Ku, Ke, Kpu[ZSim[i], :, :])
-
-    KpeFit = interpolate.linear.lininterp2(KuImp[i], KeImp[i], Ku, Ke, Kpe[ZSim[i], :, :])
-    KpuFit = interpolate.linear.lininterp2(KuImp[i], KeImp[i], Ku, Ke, Kpu[ZSim[i], :, :])
-             
-    kprimeE = [interpolate.linear.lininterp3(kk.dot(Pe), val, kk.dot(Pu), Ke, kp, Ku, kpmat[ZSim[i], 0, :,:,:]) for val in kk]
-    kprimeU = [interpolate.linear.lininterp3(kk.dot(Pe), val, kk.dot(Pu), Ke, kp, Ku, kpmat[ZSim[i], 1, :,:,:]) for val in kk]
     
-    Kind[i + 1] = interpolate.linear.lininterp3(kk.dot(Pe), Kind[i], kk.dot(Pu), Ke, kp, Ku, kpmat[ZSim[i], ind_switch[i], :, :, :])
+    # remember to transpose 2D array before passing as arg...inputs needs to be Fortran contiguous!
+    KpeSim = pwl_interp.pwl_interp_2d(Ku, Ke, Kpe[ZSim[i], :, :].T, KuSim[i], KeSim[i])
+    KpuSim = pwl_interp.pwl_interp_2d(Ku, Ke, Kpu[ZSim[i], :, :].T, KuSim[i], KeSim[i])
+
+    KpeFit = pwl_interp.pwl_interp_2d(Ku, Ke, Kpe[ZSim[i], :, :].T, KuImp[i], KeImp[i])
+    KpuFit = pwl_interp.pwl_interp_2d(Ku, Ke, Kpu[ZSim[i], :, :].T, KuImp[i], KeImp[i])
+
+    # why do I not need to bother making 3D array Fortran contiguous?
+    kprimeE = pwl_interp.pwl_interp_3d(Ke, kp, Ku, kpmat[ZSim[i], 0, :,:,:], 
+                                       np.repeat(kk.dot(Pe), NDist), kk, np.repeat(kk.dot(Pu), NDist))    
+    kprimeU = pwl_interp.pwl_interp_3d(Ke, kp, Ku, kpmat[ZSim[i], 1, :,:,:], 
+                                       np.repeat(kk.dot(Pe), NDist), kk, np.repeat(kk.dot(Pu), NDist))
+   
+    Kind[i + 1] = pwl_interp.pwl_interp_3d(Ke, kp, Ku, kpmat[ZSim[i], ind_switch[i], :, :, :], kk.dot(Pe), Kind[i], kk.dot(Pu))
+    
     K = (1 - Unemp[ZSim[i], 0]) * KeImp[i] + Unemp[ZSim[i], 0] * KuImp[i]
     r = 1 + alpha * ZZ[ZSim[i], 0] * (K / (h * (1 - Unemp[ZSim[i], 0])))**(alpha - 1) - delta
     w = (1 - alpha) * ZZ[ZSim[i], 0] * (K / (h * (1 - Unemp[ZSim[i], 0])))**alpha
@@ -359,6 +362,7 @@ for i in range(SimLength):
     P = (1 - Unemp[ZSim[i], 0]) * Pe + Unemp[ZSim[i], 0] * Pu
 
     # This section computes percentiles of something...not sure what!    
+    
     CP = np.cumsum(P)
     IP5 = np.nonzero(CP < 0.05)[0][-1] # occasionally this is empty!
     percentile[i, 0] = (0.05 - CP[IP5 + 1]) / (CP[IP5] - CP[IP5 + 1]) * kk[IP5] + (1 - (0.05 - CP[IP5 + 1]) / (CP[IP5] - CP[IP5 + 1])) * kk[IP5 + 1] 
@@ -455,33 +459,51 @@ for i in range(SimLength):
             Pu           = (P00[0, 1] * (1 - UnempB) * PPe + P00[1, 1] * UnempB * PPu) / UnempB
             KeImp[i + 1] = kk.dot(Pe)
             KuImp[i + 1] = kk.dot(Pu)
-
-KSim = (1 - Unemp[ZSim]) * KeSim + Unemp[ZSim] * KuSim
-KImp = (1 - Unemp[ZSim]) * KeImp + Unemp[ZSim] * KuImp
-KFit = (1 - Unemp[ZSim]) * KeFit + Unemp[ZSim] * KuFit
+            
+    # increment the counter
+    s = s + 1
+    if s % 100 == 0:
+        print "Number of iterations:", s
+    
+# finish up!
+KSim = (1 - Unemp[ZSim, 0]) * KeSim + Unemp[ZSim, 0] * KuSim
+KImp = (1 - Unemp[ZSim, 0]) * KeImp + Unemp[ZSim, 0] * KuImp
+KFit = (1 - Unemp[ZSim, 0]) * KeFit + Unemp[ZSim, 0] * KuFit
 
 ZZ = np.array([[zg], [zb]])
-Y  = ZZ[ZSim] * KImp**alpha * ((1 - Unemp[ZSim]) * h)**(1 - alpha)
-C  = Y[:-1] - KImp[1:] + (1 - delta) * KImp[1:-1]
+Y  = ZZ[ZSim, 0] * KImp**alpha * ((1 - Unemp[ZSim, 0]) * h)**(1 - alpha)
+C  = Y[:-1] - KImp[1:] + (1 - delta) * KImp[:-1]
 
+# aggregate output
 Yind = Cind + Kind[1:] - (1 - delta) * Kind[:-1]
 
-print 'Correlation of individual and aggregate consumption:', np.corrcoef(Cind, C)
-#print 'Correlation of individual consumption and aggregate income:', np.corrcoef([Cind,Y(1:end-1)])
-#print 'Correlation of individual consumption and aggregate capital:', np.corrcoef([Cind,KImp[:-1]])
-#print 'Correlation of individual consumption and individual income:', np.corrcoef([Cind,Yind])
-#print 'Correlation of individual consumption and individual capital:', np.corrcoef([Cind,Kind[:-1]])
-#print 'Standard deviation of individual consumption:', np.std(Cind)
-#print 'Standard deviation of individual capital:', np.std(Kind)
-#print 'Autocorrelation of individual consumption:', corrcoef([Cind(1:end-3),Cind(2:end-2),Cind(3:end-1),Cind(4:end)])
-#print 'Autocorrelation of individual capital:', corrcoef([Kind(1:end-3),Kind(2:end-2),Kind(3:end-1),Kind(4:end)])
-#print 'Autocorrelation of individual consumption growth:', cgrowth = log(Cind(2:end))-log(Cind(1:end-1));
-#corrcoef([cgrowth(1:end-3),cgrowth(2:end-2),cgrowth(3:end-1),cgrowth(4:end)])
-#print 'Max error Ke (%)', 100 * np.max(np.abs(np.log(KeSim) - np.log(KeImp)))
-#print 'Max error Ku (%)', 100 * np.max(np.abs(np.log(KuSim) - np.log(KuImp)))
-#print 'Mean error Ke (%)', 100 * np.mean(np.abs(np.log(KeSim) - np.log(KeImp)))
-#print 'Mean error Ku (%)', 100 * np.mean(np.abs(np.log(KuSim) - np.log(KuImp)))
-#print 'R-Square K', 1 - np.var(KImp - KFit) / np.var(KImp)
-#print 'R-Square Ke', 1 - np.var(KeImp - KeFit) / np.var(KeImp)
-#print 'R-Square Ku', 1 - np.var(KuImp - KuFit) / np.var(KuImp)
-
+print 'Correlation of individual and aggregate consumption:' 
+print np.corrcoef([Cind, C])
+print 'Correlation of individual consumption and aggregate income:' 
+print np.corrcoef([Cind, Y[:-1]])
+print 'Correlation of individual consumption and aggregate capital:' 
+print np.corrcoef([Cind, KImp[:-1]])
+print 'Correlation of individual consumption and individual income:'
+print np.corrcoef([Cind, Yind])
+print 'Correlation of individual consumption and individual capital:' 
+print np.corrcoef([Cind, Kind[:-1]])
+print ''
+print 'Standard deviation of individual consumption:', np.std(Cind)
+print 'Standard deviation of individual capital:', np.std(Kind)
+print ''
+print 'Autocorrelation of individual consumption:'
+print np.corrcoef([Cind[:-3], Cind[1:-2],Cind[2:-1],Cind[3:]])
+print 'Autocorrelation of individual capital:'
+print np.corrcoef([Kind[:-3], Kind[1:-2], Kind[2:-1], Kind[3:]])
+print 'Autocorrelation of individual consumption growth:'
+cgrowth = np.log(Cind[1:]) - np.log(Cind[:-1])
+print np.corrcoef([cgrowth[:-3], cgrowth[1:-2], cgrowth[2:-1], cgrowth[3:]])
+print ''
+print 'Max error Ke (%)', 100 * np.max(np.abs(np.log(KeSim) - np.log(KeImp)))
+print 'Max error Ku (%)', 100 * np.max(np.abs(np.log(KuSim) - np.log(KuImp)))
+print 'Mean error Ke (%)', 100 * np.mean(np.abs(np.log(KeSim) - np.log(KeImp)))
+print 'Mean error Ku (%)', 100 * np.mean(np.abs(np.log(KuSim) - np.log(KuImp)))
+print ''
+print 'R-Square K', 1 - (np.var(KImp - KFit) / np.var(KImp))
+print 'R-Square Ke', 1 - (np.var(KeImp - KeFit) / np.var(KeImp))
+print 'R-Square Ku', 1 - (np.var(KuImp - KuFit) / np.var(KuImp))
