@@ -18,8 +18,6 @@ UnempB = .1
 # unemployment rates are state dependent (i.e., array must be of same size as productivity shocks!)
 unemployment_rates = np.array([UnempG, UnempB])
 
-#Unemp = np.array([[UnempG], [UnempB]])
-
 DurationZG = 8
 DurationZB = 8
 
@@ -91,8 +89,9 @@ Kemin = 35
 Kumax = 42.5
 Kemax = 43.5
 
+# logarithmic spaced grid (puts more points near the constraint) 
 kptemp = np.linspace(0, np.log(kmax + 1 - kmin), Nk).reshape((Nk, 1))
-kp = np.exp(kptemp) - 1 + kmin
+kp     = np.exp(kptemp) - 1 + kmin
 
 Ke = np.linspace(Kemin, Kemax, NK).reshape((NK, 1))
 Ku = np.linspace(Kumin, Kumax, NK).reshape((NK, 1))
@@ -102,7 +101,6 @@ kpp1 = np.empty((2, 2, NK, Nk, NK))
 kpp2 = np.empty((2, 2, NK, Nk, NK))
 
 # multi-dimensional array indexing differs between NumPy and Matlab
-
 for ii in range(2):
     for i in range(2):
         for j in range(NK):
@@ -279,13 +277,22 @@ def get_labor_income(e, z_index, K, params):
                 
     return labor_income
 
-def marginal_utility():
+def get_aggregate_capital(z_index, Ke, Ku, params=None):
+    """Computes aggregate capital stock."""
+    employed_capital   = (1 - unemployment_rates[z_index]) * Ke
+    unemployed_capital = unemployment_rates[z_index] * Ku
+    
+    total_capital = employed_capital + unemployed_capital
+    
+    return total_capital
+    
+def marginal_utility(e, k, z_index, K, params=None):
     """Marginal utility for agent with CRRA preferences."""
     # compute income
-    income = get_income()
+    income = get_income(e, k, z_index, K, params)
     
     # compute savings
-    investment = k
+    investment = kpp1
     
     # compute consumption
     c = income - investment
@@ -300,28 +307,28 @@ while ConvCrit > tol:
     k = np.empty((2, 2, NK, Nk, NK))
     
     # constructing the error term (i.e., equation 4 from Den Haan and Rendahl (2009))
-    for i in range(2): # pages (productivity shocks!)
-        for j in range(NK): # rows
-            for l in range(NK): # cols
+    for z_index in range(2): # pages (productivity shocks!)
+        for j in range(NK): # rows (employed capital!)
+            for l in range(NK): # cols (unemployed capital!)
                 
                 # next period's aggregate capital stock
-                Kp = (1 - unemployment_rates[i]) * Kpe[i, j, l] + unemployment_rates[i] * Kpu[i, j, l]
+                Kp = (1 - unemployment_rates[z_index]) * Kpe[z_index, j, l] + unemployment_rates[z_index] * Kpu[z_index, j, l]
                                 
                 # correct dimensions are (Nk, 4)
-                RHS = np.hstack((beta * (1 + get_mpk(0, Kp) - delta) * (get_income(True, kp, 0, Kp) - kpp1[i, 0, l, :, j].reshape((Nk, 1)))**(-sigma),
-                                 beta * (1 + get_mpk(0, Kp) - delta) * (get_income(False, kp, 0, Kp) - kpp2[i, 0, l, :, j].reshape((Nk, 1)))**(-sigma),
-                                 beta * (1 + get_mpk(1, Kp) - delta) * (get_income(True, kp, 1, Kp) - kpp1[i, 1, l, :, j].reshape((Nk, 1)))**(-sigma),
-                                 beta * (1 + get_mpk(1, Kp) - delta) * (get_income(False, kp, 1, Kp) - kpp2[i, 1, l, :, j].reshape((Nk, 1)))**(-sigma)))
+                RHS = np.hstack((beta * (1 + get_mpk(0, Kp) - delta) * (get_income(True, kp, 0, Kp) - kpp1[z_index, 0, l, :, j].reshape((Nk, 1)))**(-sigma),
+                                 beta * (1 + get_mpk(0, Kp) - delta) * (get_income(False, kp, 0, Kp) - kpp2[z_index, 0, l, :, j].reshape((Nk, 1)))**(-sigma),
+                                 beta * (1 + get_mpk(1, Kp) - delta) * (get_income(True, kp, 1, Kp) - kpp1[z_index, 1, l, :, j].reshape((Nk, 1)))**(-sigma),
+                                 beta * (1 + get_mpk(1, Kp) - delta) * (get_income(False, kp, 1, Kp) - kpp2[z_index, 1, l, :, j].reshape((Nk, 1)))**(-sigma)))
                 
-                C1 = (RHS.dot(P[2 * i, :].reshape((P.shape[0], 1))))**(-1 / sigma)
-                C2 = (RHS.dot(P[2 * i + 1, :].reshape((P.shape[0], 1))))**(-1 / sigma)
+                C1 = (RHS.dot(P[2 * z_index, :].reshape((P.shape[0], 1))))**(-1 / sigma)
+                C2 = (RHS.dot(P[2 * z_index + 1, :].reshape((P.shape[0], 1))))**(-1 / sigma)
                 
-                K = (1 - unemployment_rates[i]) * Ke[j, 0] + unemployment_rates[i] * Ku[l, 0]
+                K = (1 - unemployment_rates[z_index]) * Ke[j, 0] + unemployment_rates[z_index] * Ku[l, 0]
             
-                k[i, 0, l, :, j] = ((C1 - l_bar * get_mpl(i, K) * (1 - get_income_tax_rate(i, None)) + kp).flatten() / 
-                                    (1 + get_mpk(i, K) - delta))
-                k[i, 1, l, :, j] = ((C2 - mu * get_mpl(i, K) + kp).flatten() /
-                                    (1 + get_mpk(i, K) - delta))
+                k[z_index, 0, l, :, j] = ((C1 - l_bar * get_mpl(z_index, K) * (1 - get_income_tax_rate(z_index, None)) + kp).flatten() / 
+                                          (1 + get_mpk(z_index, K) - delta))
+                k[z_index, 1, l, :, j] = ((C2 - mu * get_mpl(z_index, K) + kp).flatten() /
+                                          (1 + get_mpk(z_index, K) - delta))
     
     ConvCrit = 0
 
@@ -482,7 +489,7 @@ for i in range(SimLength):
     w = (1 - alpha) * productivity_shocks[ZSim[i]] * (K / (l_bar * (1 - unemployment_rates[ZSim[i]])))**alpha
 
     # not sure what is going on with ind_switch
-    Cind[i] = r * Kind[i] + (1 - ind_switch[i]) * l_bar * w * (1 - tau[0, ZSim[i]]) + ind_switch[i] * w * UI - Kind[i + 1]
+    Cind[i] = r * Kind[i] + (1 - ind_switch[i]) * l_bar * w * (1 - get_income_tax_rate(ZSim[i], None)) + ind_switch[i] * w * mu - Kind[i + 1]
     Rvec[i] = r
     Wvec[i] = w
     
@@ -603,7 +610,7 @@ KSim = (1 - unemployment_rates[ZSim]) * KeSim + unemployment_rates[ZSim] * KuSim
 KImp = (1 - unemployment_rates[ZSim]) * KeImp + unemployment_rates[ZSim] * KuImp
 KFit = (1 - unemployment_rates[ZSim]) * KeFit + unemployment_rates[ZSim] * KuFit
 
-Y  = productivity_shocks[ZSim] * KImp**alpha * ((1 - unemployment_rates[ZSim]) * h)**(1 - alpha)
+Y  = productivity_shocks[ZSim] * KImp**alpha * ((1 - unemployment_rates[ZSim]) * l_bar)**(1 - alpha)
 C  = Y[:-1] - KImp[1:] + (1 - delta) * KImp[:-1]
 
 # aggregate output
@@ -628,6 +635,7 @@ print np.corrcoef([Cind[:-3], Cind[1:-2],Cind[2:-1],Cind[3:]])
 print 'Autocorrelation of individual capital:'
 print np.corrcoef([Kind[:-3], Kind[1:-2], Kind[2:-1], Kind[3:]])
 print 'Autocorrelation of individual consumption growth:'
+
 cgrowth = np.log(Cind[1:]) - np.log(Cind[:-1])
 print np.corrcoef([cgrowth[:-3], cgrowth[1:-2], cgrowth[2:-1], cgrowth[3:]])
 print ''
