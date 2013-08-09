@@ -1,6 +1,6 @@
 from __future__ import division
 import numpy as np
-from scipy import linalg, ndimage
+from scipy import linalg
 from pyeconomics.interpolation import pwl_interp
 
 # Defining the transition matrix.
@@ -154,6 +154,53 @@ tol = 1e-6
 
 print 'Solving the individual and aggregate problem until ConvCrit < %g' %tol
 
+def get_gross_interest_rate(productivity, capital, labor, params=None):
+    """
+    Capital is paid its marginal product.
+    
+    Arguments:
+        
+        productivity: (float) Aggregate productivity.
+        capital:      (float) Aggregate capital stock.
+        labor:        (float) Aggregate labor supply.
+        params:       (dict) Dictionary of model parameters.
+    
+    Returns:
+        
+        R: (float) Gross interest rate (net depreciation).
+                
+    """
+    
+    # compute the marginal product of capital
+    mpk = alpha * productivity * (capital / labor)**(alpha - 1)
+    
+    # gross interest rate (net depreciation)          
+    R = 1 + mpk - delta      
+    
+    return R
+
+def get_real_wage(productivity, capital, labor, params=None):
+    """
+    Labor is paid its marginal product.
+    
+    Arguments:
+        
+        productivity: (float) Aggregate productivity.
+        capital:      (float) Aggregate capital stock.
+        labor:        (float) Aggregate labor supply.
+        params:       (dict) Dictionary of model parameters.
+    
+    Returns:
+        
+        mpl: (float) Real wage (i.e., marginal product of labor).
+                
+    """
+    
+    # compute the marginal product of labor
+    mpl = (1 - alpha) * productivity * (capital / labor)**alpha
+         
+    return mpl  
+       
 while ConvCrit > tol:
     s = s + 1
     k = np.empty((2, 2, NK, Nk, NK))
@@ -163,15 +210,17 @@ while ConvCrit > tol:
             for l in range(NK): # cols
                 Kp = (1 - Unemp[i, 0]) * Kpe[i, j, l] + Unemp[i, 0] * Kpu[i, j, l]
                 
-                Rp = np.array([(1 + alpha * zg * (Kp / (h * (1 - UnempG)))**(alpha - 1) - delta), 
-                               (1 + alpha * zg * (Kp / (h * (1 - UnempG)))**(alpha - 1) - delta),
-                               (1 + alpha * zb * (Kp / (h * (1 - UnempB)))**(alpha - 1) - delta),
-                               (1 + alpha * zb * (Kp / (h * (1 - UnempB)))**(alpha - 1) - delta)])
+                # return to capital depends on aggregate state
+                Rp = np.array([get_gross_interest_rate(zg, Kp, (h * (1 - UnempG))), 
+                               get_gross_interest_rate(zg, Kp, (h * (1 - UnempG))),
+                               get_gross_interest_rate(zb, Kp, (h * (1 - UnempB))),
+                               get_gross_interest_rate(zb, Kp, (h * (1 - UnempB)))])
                 
-                Wp = np.array([h * (1 - alpha) * zg * (Kp / (h * (1 - UnempG)))**alpha * (1 - tau[0, 0]),
-                              (1 - alpha) * zg * (Kp / (h * (1 - UnempG)))**alpha,
-                              h * (1 - alpha) * zb * (Kp / (h * (1 - UnempB)))**alpha * (1 - tau[0, 1]),
-                              (1 - alpha) * zb * (Kp / (h * (1 - UnempB)))**alpha])
+                # labor income depends on aggregate state and employment status
+                Wp = np.array([h * get_real_wage(zg, Kp, (h * (1 - UnempG))) * (1 - tau[0, 0]),
+                                   get_real_wage(zg, Kp, (h * (1 - UnempG))),
+                               h * get_real_wage(zb, Kp, (h * (1 - UnempB))) * (1 - tau[0, 1]),
+                                   get_real_wage(zb, Kp, (h * (1 - UnempB)))])
                 
                 # correct dimensions are (Nk, 4)
                 RHS = np.hstack((beta * Rp[0] * (Rp[0] * kp + Wp[0] - kpp1[i, 0, l, :, j].reshape((Nk, 1)))**(-sigma),
@@ -180,15 +229,14 @@ while ConvCrit > tol:
                                  beta * Rp[3] * (Rp[3] * kp + UI * Wp[3] - kpp2[i, 1, l, :, j].reshape((Nk, 1)))**(-sigma)))
                 
                 C1 = (RHS.dot(P[2 * i, :].reshape((P.shape[0], 1))))**(-1 / sigma)
-                C2 = (RHS.dot(P[2 * i + 1, :].reshape((P.shape[0], 1))))**(-1/sigma)
+                C2 = (RHS.dot(P[2 * i + 1, :].reshape((P.shape[0], 1))))**(-1 / sigma)
                 
                 K = (1 - Unemp[i, 0]) * Ke[j, 0] + Unemp[i, 0] * Ku[l, 0]
             
-                k[i, 0, l, :, j] = ((C1 - h * (1 - alpha) * Z[i, 0] * (K / (h * (1 - Unemp[i, 0])))**alpha * (1 - tau[0, i]) + kp).flatten() / 
-                                    ((1 + alpha * Z[i, 0] * (K / (h * (1 - Unemp[i, 0])))**(alpha - 1) - delta)))
-                k[i, 1, l, :, j] = ((C2 - UI * (1 - alpha) * Z[i, 0] * (K / (h * (1 - Unemp[i, 0])))**alpha + kp).flatten() /
-                                    ((1 + alpha * Z[i, 0] * (K / (h * (1 - Unemp[i, 0])))**(alpha - 1) - delta)))
-    
+                k[i, 0, l, :, j] = ((C1 - h * get_real_wage(Z[i, 0], K, h * (1 - Unemp[i, 0])) * (1 - tau[0, i]) + kp).flatten() / 
+                                    get_gross_interest_rate(Z[i, 0], K, h * (1 - Unemp[i, 0])))
+                k[i, 1, l, :, j] = ((C2 - UI * get_real_wage(Z[i, 0], K, h * (1 - Unemp[i, 0])) + kp).flatten() /
+                                    get_gross_interest_rate(Z[i, 0], K, h * (1 - Unemp[i, 0])))
     
     ConvCrit = 0
 
@@ -277,7 +325,7 @@ while ConvCrit > tol:
         KpuN = np.minimum(KpuN, np.max(Ku))
         KpuN = np.maximum(KpuN, np.min(Ku))
     """
-
+"""
 print ('The individual and aggregate problem has converged. Simulation will ' + 
        'proceed until s=10000')
 
@@ -507,3 +555,4 @@ print ''
 print 'R-Square K', 1 - (np.var(KImp - KFit) / np.var(KImp))
 print 'R-Square Ke', 1 - (np.var(KeImp - KeFit) / np.var(KeImp))
 print 'R-Square Ku', 1 - (np.var(KuImp - KuFit) / np.var(KuImp))
+"""
