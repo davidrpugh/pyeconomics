@@ -229,7 +229,7 @@ def get_income_tax_rate(z_index, params):
     
     return tau
     
-def get_income(e, k, Z, K, L, params):
+def get_income(e, k, z_index, K, params=None):
     """
     Individual agent's income is the sum of capital income and labor income. 
     
@@ -243,42 +243,41 @@ def get_income(e, k, Z, K, L, params):
         params: (dict) Dictionary of model parameters.
         
     """
-    capital_income = (1 + get_mpk(Z, K, L, params) - delta) * k
+    capital_income = (1 + get_mpk(z_index, K, params) - delta) * k
     
     # real wage 
-    labor_income = get_labor_income(e, Z, K, L, params)
+    labor_income = get_labor_income(e, z_index, K, params)
     
     # compute individal income
     total_income = capital_income + labor_income
     
     return total_income
 
-def get_labor_income(e, z_index, K, L, params):
+def get_labor_income(e, z_index, K, params):
     """Labor income depends on employment status.
     
     Arguments:
         
-        e:       (boolean) Employment status. True if employed; False otherwise.
-        k:       (array) Grid of permissible values for individual capital stock.        
+        e:       (boolean) Employment status. True if employed; False otherwise.        
         z_index: (int) Index into an array of aggregate productivity shocks.
         K:       (float) Aggregate capital stock.
-        L:       (float) Aggregate labor supply.
         params:  (dict) Dictionary of model parameters.
+       
+    Returns:
         
+         labor_income: (array) Array of labor incomes.
+          
     """
     # compute the income tax rate
     tau = get_income_tax_rate(z_index, params)
     
+    # labor income depends on employment status
     if e == True:
-        real_wage = get_mpl(Z, K, L, params)
-    elif e == False and Z == zg:
-        real_wage = l_bar * get_mpl(Z, K, L, params) * (1 - tau)
-    elif e == False and Z == zb:
-        real_wage = l_bar * get_mpl(Z, K, L, params) * (1 - tau)
+        labor_income = l_bar * get_mpl(z_index, K, params) * (1 - tau)
     else:
-        raise ValueError
-        
-    return real_wage
+        labor_income = mu * get_mpl(z_index, K, params)
+                
+    return labor_income
 
 def marginal_utility():
     """Marginal utility for agent with CRRA preferences."""
@@ -301,30 +300,18 @@ while ConvCrit > tol:
     k = np.empty((2, 2, NK, Nk, NK))
     
     # constructing the error term (i.e., equation 4 from Den Haan and Rendahl (2009))
-    for i in range(2): # pages
+    for i in range(2): # pages (productivity shocks!)
         for j in range(NK): # rows
             for l in range(NK): # cols
                 
                 # next period's aggregate capital stock
                 Kp = (1 - unemployment_rates[i]) * Kpe[i, j, l] + unemployment_rates[i] * Kpu[i, j, l]
-                
-                # next period's return to capital depends on aggregate state
-                Rp = np.array([1 + get_mpk(0, Kp) - delta, 
-                               1 + get_mpk(0, Kp) - delta,
-                               1 + get_mpk(1, Kp) - delta,
-                               1 + get_mpk(1, Kp) - delta])
-                
-                # next period's wage depends on aggregate state and employment status
-                Wp = np.array([l_bar * get_mpl(0, Kp) * (1 - get_income_tax_rate(0, None)),
-                               get_mpl(0, Kp),
-                               l_bar * get_mpl(1, Kp) * (1 - get_income_tax_rate(1, None)),
-                               get_mpl(1, Kp)])
-                
+                                
                 # correct dimensions are (Nk, 4)
-                RHS = np.hstack((beta * Rp[0] * (Rp[0] * kp + Wp[0] - kpp1[i, 0, l, :, j].reshape((Nk, 1)))**(-sigma),
-                                 beta * Rp[1] * (Rp[1] * kp + mu * Wp[1] - kpp2[i, 0, l, :, j].reshape((Nk, 1)))**(-sigma),
-                                 beta * Rp[2] * (Rp[2] * kp + Wp[2] - kpp1[i, 1, l, :, j].reshape((Nk, 1)))**(-sigma),
-                                 beta * Rp[3] * (Rp[3] * kp + mu * Wp[3] - kpp2[i, 1, l, :, j].reshape((Nk, 1)))**(-sigma)))
+                RHS = np.hstack((beta * (1 + get_mpk(0, Kp) - delta) * (get_income(True, kp, 0, Kp) - kpp1[i, 0, l, :, j].reshape((Nk, 1)))**(-sigma),
+                                 beta * (1 + get_mpk(0, Kp) - delta) * (get_income(False, kp, 0, Kp) - kpp2[i, 0, l, :, j].reshape((Nk, 1)))**(-sigma),
+                                 beta * (1 + get_mpk(1, Kp) - delta) * (get_income(True, kp, 1, Kp) - kpp1[i, 1, l, :, j].reshape((Nk, 1)))**(-sigma),
+                                 beta * (1 + get_mpk(1, Kp) - delta) * (get_income(False, kp, 1, Kp) - kpp2[i, 1, l, :, j].reshape((Nk, 1)))**(-sigma)))
                 
                 C1 = (RHS.dot(P[2 * i, :].reshape((P.shape[0], 1))))**(-1 / sigma)
                 C2 = (RHS.dot(P[2 * i + 1, :].reshape((P.shape[0], 1))))**(-1 / sigma)
