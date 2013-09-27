@@ -1,0 +1,155 @@
+import numpy as np
+from scipy import integrate, optimize
+
+class SteadyState(object):
+    """Abstract class representing the steady state of a GrowthModel."""
+
+    def __init__(self, model):
+        """Initializes a SteadyState object with the following attributes:
+
+            model:    (object) Instance of the GrowthModel class (or one of its
+                      children).
+            jacobian: (function) Function that returns the model's jacobian. 
+
+        """
+        self.model    = model
+
+    def set_values(self, values):
+        """Determines the steady state based on a user-provided dictionary of 
+        values.
+                    
+        """
+        self.values = values
+
+    def set_jacobian(self, jac):
+        """User-provided Jacobian."""
+        
+    def find_values(self, keys, fun, x0, args, method='hybr', jac=None, 
+                    options=None):
+        """Wraps optimize.root to solve for the deterministic steady state 
+        numerically using a non-linear root finding algorithm. 
+        
+        Arguments:
+            
+            keys:    (list) List of keys for the dictionary of steady state 
+                     values.
+            fun:     (callable) A vector function to find a root of.
+            x0:      (array-like) Initial guess for the steady state.
+            args:    (tuple) Extra arguments passed to the objective function 
+                     and its Jacobian.
+            method:  (str, optional) Type of solver. Should be one of
+'hybr'
+'lm'
+'broyden1'
+'broyden2'
+'anderson'
+'linearmixing'
+'diagbroyden'
+'excitingmixing'
+'krylov'
+            jac:     (bool or callable, optional) If jac is a Boolean and is  
+                     True, fun is assumed to return the value of Jacobian along
+                     with the objective function. If False, the Jacobian will be 
+                     estimated numerically. jac can also be a callable returning
+                     the Jacobian of fun. In this case, it must accept the same 
+                     arguments as fun. 
+            options: (dict, optional) A dictionary of solver options.
+           
+        If successful, the function will modify the SteadyState object's values 
+        attribute with a new dictionary of steady state values; if convergence 
+        fails, then the function returns the full result object provided by 
+        optimize.root for trouble shooting.
+              
+        """  
+        # sanity check!
+        if len(keys) != len(x0):
+            raise ValueError, 'Length of keys must match length of x0!'
+                        
+        result = optimize.root(func, x0, args, method, jac, options)
+
+        # modifies the SteadyState object's values attribute 
+        if result.success == True:
+            values = {}
+            for i, val in enumerate(result.x):
+                key         = keys[i]
+                values[key] = val
+            self.values = values
+        
+        # returns full result for trouble-shooting
+        else:
+            return result 
+        
+    def check_stability(self):
+        """Checks for local stability of the deterministic steady state."""
+        pass
+    
+def get_numeric_ss():
+    """Use SciPy's non-linear root finders to numerically approximate the 
+    deterministic steady state of the model.
+
+    """
+    pass
+
+class GrowthModel(object):
+    """Base class for representing growth models.""" 
+
+    def __init__(self, params, capital, timing='continuous'):
+        """Initializes a GrowthModel object with the following attributes:
+
+        params:  (dict) Dictionary of parameter values.
+        capital: (object) Instance of the CapitalEvolution class defining the 
+                 equation of motion for capital.
+        timing:  (str) Should be one of either 'continuous' or 'discrete'.
+                 Default is 'continuous'.     
+         
+        """
+        # initialize model attributes
+        self.params  = params
+        self.capital = capital
+        self.timing  = timing
+    
+        # initialize model steady state
+        self.steady_state = SteadyState(self)
+        
+class CapitalEvolution(object):
+    """Abstract class describing the evolution of capital stock."""
+
+    def __init__(self, model, capital, timing='continuous'):
+        """Initializes a CapitalEvolution object with the following attributes:
+        
+            model:    (object) Instance of GrowthModel (or one of its children).
+            capital:  (function) Equation of motion for capital (per person/
+                      effective person).
+            timing:   (str) Should be one of either 'continuous' or 'discrete'.
+                      Default is 'continuous'.
+                     
+        """
+        pass
+            
+
+class RamseyModel(GrowthModel):
+    """Base class for working with growth models with inelastic labor supply.
+    Inherits from the GrowthModel class.
+
+    """
+
+class SolowModel(RamseyModel):
+    """Base class for working with Solow growth models. Inherits from 
+    the RamseyModel class.
+
+    """
+        
+    def update(self):
+        pass
+        
+    
+class Consumption(object):
+    """Abstract class describing a consumption policy function."""
+
+    def __init__(self, model, func):
+        pass
+    
+class LaborSupply(object):
+    """Abstract class describing the consumption policy function."""
+    def __init__(self, model, func):
+        pass

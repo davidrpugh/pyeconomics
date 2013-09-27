@@ -1,0 +1,563 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module krusell-smith-1998 ! in 
+    interface  ! in :krusell-smith-1998
+        subroutine calopt(xk,neps,ngood,ynew,value,niter,ndone,toler,nmucur,grad,xkpts,r0,w0,ykhigh,yklow,nbeta,nprint) ! in :krusell-smith-1998:wealth.f
+            real*8 :: xk
+            integer :: neps
+            integer :: ngood
+            real*8 :: ynew
+            real*8 :: value
+            integer :: niter
+            integer :: ndone
+            real*8 :: toler
+            integer :: nmucur
+            real*8 :: grad
+            real*8 dimension(132) :: xkpts
+            real*8 dimension(4,2) :: r0
+            real*8 dimension(4,2) :: w0
+            real*8 :: ykhigh
+            real*8 :: yklow
+            integer :: nbeta
+            integer :: nprint
+            real*8 dimension(4,4) :: pr
+            real*8 dimension(3,3) :: prbeta
+            real*8 dimension(3) :: prob
+            real*8 dimension(132,4,3,2) :: v1
+            real*8 dimension(132,4,3,2) :: v2
+            real*8 dimension(132,4,3,2) :: v3
+            real*8 dimension(132,4,3,2) :: v4
+            real*8 dimension(132,4,3,2) :: v1dp
+            real*8 dimension(132,4,3,2) :: v2dp
+            real*8 dimension(132,4,3,2) :: v3dp
+            real*8 dimension(132,4,3,2) :: v4dp
+            real*8 dimension(3) :: betas
+            common /cpr/ pr,prbeta,prob
+            common /cvs/ v1,v2,v3,v4,v1dp,v2dp,v3dp,v4dp
+            common /cbetas/ betas
+        end subroutine calopt
+        subroutine altopt(xk,neps,ngood,ynew,value,niter,ndone,toler,nmucur,startk,grad,xkpts,r0,w0,nbeta) ! in :krusell-smith-1998:wealth.f
+            real*8 :: xk
+            integer :: neps
+            integer :: ngood
+            real*8 :: ynew
+            real*8 :: value
+            integer :: niter
+            integer :: ndone
+            real*8 :: toler
+            integer :: nmucur
+            real*8 :: startk
+            real*8 :: grad
+            real*8 dimension(132) :: xkpts
+            real*8 dimension(4,2) :: r0
+            real*8 dimension(4,2) :: w0
+            integer :: nbeta
+            real*8 dimension(4,4) :: pr
+            real*8 dimension(3,3) :: prbeta
+            real*8 dimension(3) :: prob
+            real*8 dimension(132,4,3,2) :: v1
+            real*8 dimension(132,4,3,2) :: v2
+            real*8 dimension(132,4,3,2) :: v3
+            real*8 dimension(132,4,3,2) :: v4
+            real*8 dimension(132,4,3,2) :: v1dp
+            real*8 dimension(132,4,3,2) :: v2dp
+            real*8 dimension(132,4,3,2) :: v3dp
+            real*8 dimension(132,4,3,2) :: v4dp
+            real*8 dimension(3) :: betas
+            common /cpr/ pr,prbeta,prob
+            common /cvs/ v1,v2,v3,v4,v1dp,v2dp,v3dp,v4dp
+            common /cbetas/ betas
+        end subroutine altopt
+        subroutine dosim(seed1,seed2,xkbd,xkmean,xkstd,xkmax,xkmin,ymean,ystd,ymax,ymin,cmean,cstd,cmax,cmin,xmean,xstd,xmax,xmin,hmean,hstd,hmax,hmin,xksdmn,xksdsd,xksdmx,xksdmi,x1mxmn,x1mxsd,x1mxmx,x1mxmi,x2mxmn,x2mxsd,x2mxmx,x2mxmi,x3mxmn,x3mxsd,x3mxmx,x3mxmi,x1mimn,x1misd,x1mimx,x1mimi,x2mimn,x2misd,x2mimx,x2mimi,x3mimn,x3misd,x3mimx,x3mimi,xgmn,xgsd,xgmx,xgmi,topmn,topsd,topmx,topmi,pct0mn,pct0sd,pct0mx,pct0mi,pctcmn,pctcsd,pctcmx,pctcmi,bhat1,bhat2,rsqa,rsqb,sderra,sderrb) ! in :krusell-smith-1998:wealth.f
+            real*8 :: seed1
+            real*8 :: seed2
+            real*8 :: xkbd
+            real*8 :: xkmean
+            real*8 :: xkstd
+            real*8 :: xkmax
+            real*8 :: xkmin
+            real*8 :: ymean
+            real*8 :: ystd
+            real*8 :: ymax
+            real*8 :: ymin
+            real*8 :: cmean
+            real*8 :: cstd
+            real*8 :: cmax
+            real*8 :: cmin
+            real*8 :: xmean
+            real*8 :: xstd
+            real*8 :: xmax
+            real*8 :: xmin
+            real*8 :: hmean
+            real*8 :: hstd
+            real*8 :: hmax
+            real*8 :: hmin
+            real*8 :: xksdmn
+            real*8 :: xksdsd
+            real*8 :: xksdmx
+            real*8 :: xksdmi
+            real*8 :: x1mxmn
+            real*8 :: x1mxsd
+            real*8 :: x1mxmx
+            real*8 :: x1mxmi
+            real*8 :: x2mxmn
+            real*8 :: x2mxsd
+            real*8 :: x2mxmx
+            real*8 :: x2mxmi
+            real*8 :: x3mxmn
+            real*8 :: x3mxsd
+            real*8 :: x3mxmx
+            real*8 :: x3mxmi
+            real*8 :: x1mimn
+            real*8 :: x1misd
+            real*8 :: x1mimx
+            real*8 :: x1mimi
+            real*8 :: x2mimn
+            real*8 :: x2misd
+            real*8 :: x2mimx
+            real*8 :: x2mimi
+            real*8 :: x3mimn
+            real*8 :: x3misd
+            real*8 :: x3mimx
+            real*8 :: x3mimi
+            real*8 :: xgmn
+            real*8 :: xgsd
+            real*8 :: xgmx
+            real*8 :: xgmi
+            real*8 dimension(9) :: topmn
+            real*8 dimension(9) :: topsd
+            real*8 dimension(9) :: topmx
+            real*8 dimension(9) :: topmi
+            real*8 :: pct0mn
+            real*8 :: pct0sd
+            real*8 :: pct0mx
+            real*8 :: pct0mi
+            real*8 :: pctcmn
+            real*8 :: pctcsd
+            real*8 :: pctcmx
+            real*8 :: pctcmi
+            real*8 dimension(2,1) :: bhat1
+            real*8 dimension(2,1) :: bhat2
+            real*8 :: rsqa
+            real*8 :: rsqb
+            real*8 :: sderra
+            real*8 :: sderrb
+            real*8 dimension(277,29,4,3,4) :: coefk
+            real*8 dimension(278,30,4,3) :: optkgd
+            real*8 dimension(278) :: xkgpts
+            real*8 dimension(30) :: xmgpts
+            real*8 dimension(9) :: toppct
+            real*8 dimension(4,4) :: pr
+            real*8 dimension(3,3) :: prbeta
+            real*8 dimension(3) :: prob
+            real*8 dimension(201) :: xlzpts
+            real*8 dimension(201) :: xlzdat
+            common /ccoef/ coefk,optkgd
+            common /cgrid/ xkgpts,xmgpts
+            common /ctop/ toppct
+            common /cpr/ pr,prbeta,prob
+            common /clzpts/ xlzpts,xlzdat
+        end subroutine dosim
+        subroutine splint(xa,ya,y2a,x,y,yp,ydp,nycor,nzcor,nbcor,khi,klo,kvals,ndoy,ndoyp,ndoydp) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(132) :: xa
+            real*8 dimension(132,4,3,2) :: ya
+            real*8 dimension(132,4,3,2) :: y2a
+            real*8 :: x
+            real*8 :: y
+            real*8 :: yp
+            real*8 :: ydp
+            integer :: nycor
+            integer :: nzcor
+            integer :: nbcor
+            integer :: khi
+            integer :: klo
+            integer :: kvals
+            integer :: ndoy
+            integer :: ndoyp
+            integer :: ndoydp
+        end subroutine splint
+        subroutine tridag(a,b,c,r,u,n) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n) :: a
+            real*8 dimension(n),depend(n) :: b
+            real*8 dimension(n),depend(n) :: c
+            real*8 dimension(n),depend(n) :: r
+            real*8 dimension(n),depend(n) :: u
+            integer, optional,check(len(a)>=n),depend(a) :: n=len(a)
+        end subroutine tridag
+        subroutine polint(xa,ya,n,x,y,dy) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n) :: xa
+            real*8 dimension(n),depend(n) :: ya
+            integer, optional,check(len(xa)>=n),depend(xa) :: n=len(xa)
+            real*8 :: x
+            real*8 :: y
+            real*8 :: dy
+        end subroutine polint
+        subroutine interp(x1,x2,y,a0,a1,c0,c1) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(132) :: x1
+            real*8 dimension(4) :: x2
+            real*8 dimension(132,4,4,3) :: y
+            real*8 :: a0
+            real*8 :: a1
+            real*8 :: c0
+            real*8 :: c1
+            real*8 dimension(132,4,3,2) :: v1
+            real*8 dimension(132,4,3,2) :: v2
+            real*8 dimension(132,4,3,2) :: v3
+            real*8 dimension(132,4,3,2) :: v4
+            real*8 dimension(132,4,3,2) :: v1dp
+            real*8 dimension(132,4,3,2) :: v2dp
+            real*8 dimension(132,4,3,2) :: v3dp
+            real*8 dimension(132,4,3,2) :: v4dp
+            common /cvs/ v1,v2,v3,v4,v1dp,v2dp,v3dp,v4dp
+        end subroutine interp
+        subroutine calop2(xk,neps,ngood,ynew,value,niter,ndone,toler,grad,xkpts,r0cur,w0cur,ykhigh,yklow,nbeta) ! in :krusell-smith-1998:wealth.f
+            real*8 :: xk
+            integer :: neps
+            integer :: ngood
+            real*8 :: ynew
+            real*8 :: value
+            integer :: niter
+            integer :: ndone
+            real*8 :: toler
+            real*8 :: grad
+            real*8 dimension(132) :: xkpts
+            real*8 dimension(2) :: r0cur
+            real*8 dimension(2) :: w0cur
+            real*8 :: ykhigh
+            real*8 :: yklow
+            integer :: nbeta
+            real*8 dimension(4,4) :: pr
+            real*8 dimension(3,3) :: prbeta
+            real*8 dimension(3) :: prob
+            real*8 dimension(132,3,2) :: w1
+            real*8 dimension(132,3,2) :: w2
+            real*8 dimension(132,3,2) :: w3
+            real*8 dimension(132,3,2) :: w4
+            real*8 dimension(132,3,2) :: w1dp
+            real*8 dimension(132,3,2) :: w2dp
+            real*8 dimension(132,3,2) :: w3dp
+            real*8 dimension(132,3,2) :: w4dp
+            real*8 dimension(3) :: betas
+            common /cpr/ pr,prbeta,prob
+            common /cws/ w1,w2,w3,w4,w1dp,w2dp,w3dp,w4dp
+            common /cbetas/ betas
+        end subroutine calop2
+        subroutine altop2(xk,neps,ngood,ynew,value,niter,ndone,toler,startk,grad,xkpts,r0cur,w0cur,nbeta) ! in :krusell-smith-1998:wealth.f
+            real*8 :: xk
+            integer :: neps
+            integer :: ngood
+            real*8 :: ynew
+            real*8 :: value
+            integer :: niter
+            integer :: ndone
+            real*8 :: toler
+            real*8 :: startk
+            real*8 :: grad
+            real*8 dimension(132) :: xkpts
+            real*8 dimension(2) :: r0cur
+            real*8 dimension(2) :: w0cur
+            integer :: nbeta
+            real*8 dimension(4,4) :: pr
+            real*8 dimension(3,3) :: prbeta
+            real*8 dimension(3) :: prob
+            real*8 dimension(132,3,2) :: w1
+            real*8 dimension(132,3,2) :: w2
+            real*8 dimension(132,3,2) :: w3
+            real*8 dimension(132,3,2) :: w4
+            real*8 dimension(132,3,2) :: w1dp
+            real*8 dimension(132,3,2) :: w2dp
+            real*8 dimension(132,3,2) :: w3dp
+            real*8 dimension(132,3,2) :: w4dp
+            real*8 dimension(3) :: betas
+            common /cpr/ pr,prbeta,prob
+            common /cws/ w1,w2,w3,w4,w1dp,w2dp,w3dp,w4dp
+            common /cbetas/ betas
+        end subroutine altop2
+        subroutine inter2(x1,x2,y,a0,a1,c0,c1,xmu) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(132) :: x1
+            real*8 dimension(4) :: x2
+            real*8 dimension(132,4,4,3) :: y
+            real*8 :: a0
+            real*8 :: a1
+            real*8 :: c0
+            real*8 :: c1
+            real*8 :: xmu
+            real*8 dimension(132,3,2) :: w1
+            real*8 dimension(132,3,2) :: w2
+            real*8 dimension(132,3,2) :: w3
+            real*8 dimension(132,3,2) :: w4
+            real*8 dimension(132,3,2) :: w1dp
+            real*8 dimension(132,3,2) :: w2dp
+            real*8 dimension(132,3,2) :: w3dp
+            real*8 dimension(132,3,2) :: w4dp
+            common /cws/ w1,w2,w3,w4,w1dp,w2dp,w3dp,w4dp
+        end subroutine inter2
+        subroutine splin2(xa,ya,y2a,x,y,yp,ydp,nycor,nbcor,khi,klo,kvals,ndoy,ndoyp,ndoydp) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(132) :: xa
+            real*8 dimension(132,3,2) :: ya
+            real*8 dimension(132,3,2) :: y2a
+            real*8 :: x
+            real*8 :: y
+            real*8 :: yp
+            real*8 :: ydp
+            integer :: nycor
+            integer :: nbcor
+            integer :: khi
+            integer :: klo
+            integer :: kvals
+            integer :: ndoy
+            integer :: ndoyp
+            integer :: ndoydp
+        end subroutine splin2
+        subroutine locid2(x,xlow,xhigh,xinc,npts,ngrid,nlow,nhigh) ! in :krusell-smith-1998:wealth.f
+            real*8 :: x
+            real*8 :: xlow
+            real*8 :: xhigh
+            real*8 :: xinc
+            integer :: npts
+            integer :: ngrid
+            integer :: nlow
+            integer :: nhigh
+        end subroutine locid2
+        subroutine integr(xa,ya,y2a,n,xint) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n) :: xa
+            real*8 dimension(n),depend(n) :: ya
+            real*8 dimension(n),depend(n) :: y2a
+            integer, optional,check(len(xa)>=n),depend(xa) :: n=len(xa)
+            real*8 :: xint
+        end subroutine integr
+        subroutine calcsd(x,y,vdp,a,b,c,r,n,an,c1) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n) :: x
+            real*8 dimension(n),depend(n) :: y
+            real*8 dimension(n),depend(n) :: vdp
+            real*8 dimension(n),depend(n) :: a
+            real*8 dimension(n),depend(n) :: b
+            real*8 dimension(n),depend(n) :: c
+            real*8 dimension(n),depend(n) :: r
+            integer, optional,check(len(x)>=n),depend(x) :: n=len(x)
+            real*8 :: an
+            real*8 :: c1
+        end subroutine calcsd
+        subroutine doint(xa,ya,y2a,x,y,yp,ydp,khi,klo,kvals,n,ndoy,ndoyp,ndoydp) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n) :: xa
+            real*8 dimension(n),depend(n) :: ya
+            real*8 dimension(n),depend(n) :: y2a
+            real*8 :: x
+            real*8 :: y
+            real*8 :: yp
+            real*8 :: ydp
+            integer :: khi
+            integer :: klo
+            integer :: kvals
+            integer, optional,check(len(xa)>=n),depend(xa) :: n=len(xa)
+            integer :: ndoy
+            integer :: ndoyp
+            integer :: ndoydp
+        end subroutine doint
+        subroutine pinvar(p,prob) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(3,3) :: p
+            real*8 dimension(3) :: prob
+        end subroutine pinvar
+        function nstate(nz,neps) ! in :krusell-smith-1998:wealth.f
+            integer :: nz
+            integer :: neps
+            integer :: nstate
+        end function nstate
+        subroutine nrand2(sseed,nlow,nhigh,nums,n) ! in :krusell-smith-1998:wealth.f
+            real*8 :: sseed
+            integer :: nlow
+            integer :: nhigh
+            integer dimension(30) :: nums
+            integer :: n
+        end subroutine nrand2
+        subroutine lawlrg(sseed,neps,nz,nagent,nswtch) ! in :krusell-smith-1998:wealth.f
+            real*8 :: sseed
+            integer dimension(nagent) :: neps
+            integer :: nz
+            integer, optional,check(len(neps)>=nagent),depend(neps) :: nagent=len(neps)
+            integer :: nswtch
+        end subroutine lawlrg
+        function dstd3(xk1,xk2,xk3,nagnt1,nagnt2,nagnt3,xkmean,p1,p2,p3) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(nagnt1) :: xk1
+            real*8 dimension(nagnt2) :: xk2
+            real*8 dimension(nagnt3) :: xk3
+            integer, optional,check(len(xk1)>=nagnt1),depend(xk1) :: nagnt1=len(xk1)
+            integer, optional,check(len(xk2)>=nagnt2),depend(xk2) :: nagnt2=len(xk2)
+            integer, optional,check(len(xk3)>=nagnt3),depend(xk3) :: nagnt3=len(xk3)
+            real*8 :: xkmean
+            real*8 :: p1
+            real*8 :: p2
+            real*8 :: p3
+            double precision :: dstd3
+        end function dstd3
+        subroutine domean(xk1,xk2,xk3,nagnt1,nagnt2,nagnt3,wght1,wght2,wght3,xkmean) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(nagnt1) :: xk1
+            real*8 dimension(nagnt2) :: xk2
+            real*8 dimension(nagnt3) :: xk3
+            integer, optional,check(len(xk1)>=nagnt1),depend(xk1) :: nagnt1=len(xk1)
+            integer, optional,check(len(xk2)>=nagnt2),depend(xk2) :: nagnt2=len(xk2)
+            integer, optional,check(len(xk3)>=nagnt3),depend(xk3) :: nagnt3=len(xk3)
+            real*8 :: wght1
+            real*8 :: wght2
+            real*8 :: wght3
+            real*8 :: xkmean
+        end subroutine domean
+        subroutine dopct(xk1,xk2,xk3,neps1,neps2,neps3,nagnt1,nagnt2,nagnt3,wght1,wght2,wght3,pctemp,p0,pcon) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(nagnt1) :: xk1
+            real*8 dimension(nagnt2) :: xk2
+            real*8 dimension(nagnt3) :: xk3
+            integer dimension(nagnt1),depend(nagnt1) :: neps1
+            integer dimension(nagnt2),depend(nagnt2) :: neps2
+            integer dimension(nagnt3),depend(nagnt3) :: neps3
+            integer, optional,check(len(xk1)>=nagnt1),depend(xk1) :: nagnt1=len(xk1)
+            integer, optional,check(len(xk2)>=nagnt2),depend(xk2) :: nagnt2=len(xk2)
+            integer, optional,check(len(xk3)>=nagnt3),depend(xk3) :: nagnt3=len(xk3)
+            real*8 :: wght1
+            real*8 :: wght2
+            real*8 :: wght3
+            real*8 dimension(3) :: pctemp
+            real*8 :: p0
+            real*8 :: pcon
+        end subroutine dopct
+        function xmax3(x1,x2,x3) ! in :krusell-smith-1998:wealth.f
+            real*8 :: x1
+            real*8 :: x2
+            real*8 :: x3
+            double precision :: xmax3
+        end function xmax3
+        subroutine ludcmp(a,n,np,indx,d,nsing) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(np,np) :: a
+            integer, optional,check(len(indx)>=n),depend(indx) :: n=len(indx)
+            integer, optional,check(shape(a,0)==np),depend(a) :: np=shape(a,0)
+            integer dimension(n) :: indx
+            real*8 :: d
+            integer :: nsing
+        end subroutine ludcmp
+        subroutine lubksb(a,n,np,indx,b) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(np,np) :: a
+            integer, optional,check(len(indx)>=n),depend(indx) :: n=len(indx)
+            integer, optional,check(shape(a,0)==np),depend(a) :: np=shape(a,0)
+            integer dimension(n) :: indx
+            real*8 dimension(n),depend(n) :: b
+        end subroutine lubksb
+        subroutine inv4(a,b,nsing) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(4,4) :: a
+            real*8 dimension(4,4) :: b
+            integer :: nsing
+        end subroutine inv4
+        subroutine inimat(a,n,k) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n,k) :: a
+            integer, optional,check(shape(a,0)==n),depend(a) :: n=shape(a,0)
+            integer, optional,check(shape(a,1)==k),depend(a) :: k=shape(a,1)
+        end subroutine inimat
+        subroutine copmat(a,b,n,k) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n,k) :: a
+            real*8 dimension(n,k),depend(n,k) :: b
+            integer, optional,check(shape(a,0)==n),depend(a) :: n=shape(a,0)
+            integer, optional,check(shape(a,1)==k),depend(a) :: k=shape(a,1)
+        end subroutine copmat
+        subroutine mult2(a,b,c,n,k,l) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n,k) :: a
+            real*8 dimension(k,l),depend(k) :: b
+            real*8 dimension(n,l),depend(n,l) :: c
+            integer, optional,check(shape(a,0)==n),depend(a) :: n=shape(a,0)
+            integer, optional,check(shape(a,1)==k),depend(a) :: k=shape(a,1)
+            integer, optional,check(shape(b,1)==l),depend(b) :: l=shape(b,1)
+        end subroutine mult2
+        function dmean(x,n) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n) :: x
+            integer, optional,check(len(x)>=n),depend(x) :: n=len(x)
+            double precision :: dmean
+        end function dmean
+        function dstd(x,n) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n) :: x
+            integer, optional,check(len(x)>=n),depend(x) :: n=len(x)
+            double precision :: dstd
+        end function dstd
+        function dmax(x,n) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n) :: x
+            integer, optional,check(len(x)>=n),depend(x) :: n=len(x)
+            double precision :: dmax
+        end function dmax
+        function dmin(x,n) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n) :: x
+            integer, optional,check(len(x)>=n),depend(x) :: n=len(x)
+            double precision :: dmin
+        end function dmin
+        function multpl(i,m) ! in :krusell-smith-1998:wealth.f
+            integer :: i
+            integer :: m
+            integer :: multpl
+        end function multpl
+        subroutine ggubs(dseed,nr,r) ! in :krusell-smith-1998:wealth.f
+            double precision :: dseed
+            integer, optional,check(len(r)>=nr),depend(r) :: nr=len(r)
+            real*8 dimension(nr) :: r
+        end subroutine ggubs
+        subroutine ggnml(dseed,nr,r) ! in :krusell-smith-1998:wealth.f
+            double precision :: dseed
+            integer, optional,check(len(r)>=nr),depend(r) :: nr=len(r)
+            real*8 dimension(nr) :: r
+        end subroutine ggnml
+        subroutine mdnris(p,y,ier) ! in :krusell-smith-1998:wealth.f
+            real*8 :: p
+            real*8 :: y
+            integer :: ier
+        end subroutine mdnris
+        subroutine merfi(p,y,ier) ! in :krusell-smith-1998:wealth.f
+            real*8 :: p
+            real*8 :: y
+            integer :: ier
+        end subroutine merfi
+        subroutine ddnor(y,gauss) ! in :krusell-smith-1998:wealth.f
+            real*8 :: y
+            real*8 :: gauss
+        end subroutine ddnor
+        function nrand(sseed,nlow,nhigh) ! in :krusell-smith-1998:wealth.f
+            real*8 :: sseed
+            integer :: nlow
+            integer :: nhigh
+            integer :: nrand
+        end function nrand
+        subroutine ols2(ydata,xdata,ndata,bhat,rsq,stderr_bn,npts) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(ndata) :: ydata
+            real*8 dimension(ndata,2),depend(ndata) :: xdata
+            integer, optional,check(len(ydata)>=ndata),depend(ydata) :: ndata=len(ydata)
+            real*8 dimension(2,1) :: bhat
+            real*8 :: rsq
+            real*8 :: stderr_bn
+            integer :: npts
+        end subroutine ols2
+        subroutine locidx(x,xpts,npts,idx,nlow,nhigh,niter) ! in :krusell-smith-1998:wealth.f
+            real*8 :: x
+            real*8 dimension(npts) :: xpts
+            integer, optional,check(len(xpts)>=npts),depend(xpts) :: npts=len(xpts)
+            integer :: idx
+            integer :: nlow
+            integer :: nhigh
+            integer :: niter
+        end subroutine locidx
+        subroutine add2(a,b,c,n,k) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n,k) :: a
+            real*8 dimension(n,k),depend(n,k) :: b
+            real*8 dimension(n,k),depend(n,k) :: c
+            integer, optional,check(shape(a,0)==n),depend(a) :: n=shape(a,0)
+            integer, optional,check(shape(a,1)==k),depend(a) :: k=shape(a,1)
+        end subroutine add2
+        subroutine inv2(a,b,nsing) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(2,2) :: a
+            real*8 dimension(2,2) :: b
+            integer :: nsing
+        end subroutine inv2
+        subroutine tr(a,b,n,k) ! in :krusell-smith-1998:wealth.f
+            real*8 dimension(n,k) :: a
+            real*8 dimension(k,n),depend(k,n) :: b
+            integer, optional,check(shape(a,0)==n),depend(a) :: n=shape(a,0)
+            integer, optional,check(shape(a,1)==k),depend(a) :: k=shape(a,1)
+        end subroutine tr
+    end interface 
+end python module krusell-smith-1998
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

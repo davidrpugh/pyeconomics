@@ -1,0 +1,24 @@
+Install the files in a separate directory,
+then run main.m
+
+DLL FILES:
+The package contains a number of compiled c-files
+The distribution contains 
+- the .c-files
+- the .mexw32 files, compiled for Windows
+You may have to uncomment 2 lines in main.m
+in order to generate .dll or mexw32 etc. files,
+in case the included dll's don't work.
+This would have to be done only once.
+
+
+THE INSTALLATION INCLUDES
+a few m-files from the Miranda/Fackler toolkit, available at 
+    http://www4.ncsu.edu/~pfackler/compecon/toolbox.html;
+This is a very useful package, I recommend to download and look at the
+full package, although the folder lib_mirandafackler contains 
+all files necessary to run the present project
+
+Have fun!
+Michael Reiter
+IHS, Vienna, August 2008

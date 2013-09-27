@@ -1,0 +1,39 @@
+ 
+
+
+The authors agree to make the Software accompanying the article “Solving the 
+Incomplete Markets Model with Aggregate Uncertainty Using the Krusell-Smith 
+Algorithm” by Lilia Maliar, Serguei Maliar and Fernando Valli, (2010), Journal 
+of Economic Dynamics and Control 34, 42-49, available to you under the 
+following conditions.
+
+1. Any work that contains some results derived from the Software or a
+   modified version must: 
+
+   a. provide a prominent description of the use of the Software in the text; 
+
+   a. cite the article “Solving the Incomplete Markets Model with Aggregate 
+      Uncertainty Using the Krusell-Smith Algorithm” by Lilia Maliar, Serguei 
+      Maliar and Fernando Valli, (2010), Journal of Economic Dynamics and 
+      Control 34, 42-49. 
+
+2. The Software and any modified version may be redistributed under the 
+   terms of the present license agreement. Redistributions must include 
+   the original Software, this license agreement and the source code of 
+   the modified version with a prominent notice stating that the Software 
+   was changed and the date of the change.
+
+3. The Software comes “as is” and is used at your own risk. Any modification 
+   of the Software is your own responsibility.  The Authors assume no 
+   obligation to provide assistance with using the Software, make no 
+   warranties concerning the performance of the Software and are not 
+   liable to you or any entity for any damage related to the use of the 
+   Software. 
+
+4. The use of the Software is restricted to noncommercial research and 
+   educational purposes. If the Software or a modified version leads to the 
+   development of materials (including software, teaching materials, patents), 
+   which may be used for commercial purposes, a specific agreement must be 
+   negotiated between the authors and the beneficiary. 
+
+5. The Software is protected by copyright and other applicable laws. 

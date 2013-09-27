@@ -6,10 +6,11 @@ from scipy import optimize
 from scipy.integrate import odeint
 from scipy.spatial.distance import euclidean
 
-class ramseyModel(object):
+class Model(object):
     """Class for solving and simulating discrete and continuous-time 
-    deterministic, optimal growth models.
+    deterministic, optimal growth models with inelastic labor supply.
 
+    TODO: Should inherit from growth.Model!
     """
     def __init__(self, params, k=None, c=None, timing='discrete'):
         """ Initializes a ramseyModel object.        
@@ -40,19 +41,19 @@ class ramseyModel(object):
         self.k          = k
         # current value of the control variable, c
         self.c          = c
+        
         # are we working in discrete or continuous time?
         if timing not in ['discrete', 'continuous']:
-            raise Exception, "Timing must be either 'discrete', " + \
-                             "'continuous'!"
+            raise Exception, "Timing must be either 'discrete' or 'continuous'!"
         else: 
-            self.timing     = timing
+            self.timing = timing
 
         # create the dictionary of parameter values (use copy!)
         self.param_dict = params.copy()
         
         # create the dictionary of steady state values        
         self.SS_dict    = None
-        self.get_steadyStateValues()
+        self.get_steadytateValues()
 
         ##### Compute jacobian, and eigen* #####
         jac, eigVals, eigVecs, ind = self.checkStability()
@@ -513,20 +514,6 @@ class ramseyModel(object):
         # values of c consistent with steady state k
         return self.get_output(k) - (((1 + g) * (1 + n)) - (1 - delta)) * k
 
-    def get_kLocusContinuous(self, x, t=0):
-        """Values of consumption per effective worker consistent with
-        steady state capital per effective worker for continuous time 
-        version of the model.
-
-        """
-        # extract params
-        delta = self.param_dict['delta']
-        g     = self.param_dict['g']
-        n     = self.param_dict['n']
-
-        # values of c consistent with steady state k
-        return self.get_outputContinuous(x) - (n + g + delta) * x[0]
-
     def solve_localPerturbation(self):
         """1st and 2nd order approximations around steady state.
 
@@ -619,45 +606,7 @@ class ramseyModel(object):
 
         return [self.c, saddlePath, count, dist]
 
-    def solve_reverseShoot(self, k0, h=1e-5, T=1000):
-        """Computes the full, non-linear saddle path for a continuous
-        time version of the Ramsey model using the 'reverse shooting' 
-        algorithm (see Judd (1992) section 10.7 Infinite-Horizon 
-        Optimal Control and Reverse Shooting, p. 355-361 for details).
-
-        Inputs:
-
-            k0:        Initial value for capital per effective worker.
-            h:         Step size.
-            T:         Length of time path to plot
-
-        """
-        # compute steady state values
-        k_bar, c_bar = self.SS_dict['k_bar'], self.SS_dict['c_bar']
-
-        # local slope of optimal policy evaluated at steady state
-        Ck_prime = self.eigVecs[1, self.index] / self.eigVecs[0, self.index]
-
-        # initial conditions
-        if k0 > k_bar:
-                init = [k_bar + h, c_bar + h * Ck_prime]
-        elif k0 < k_bar:
-                init = [k_bar - h, c_bar - h * Ck_prime]
-
-        # reverse time...stable manifold is now unstable!
-        def inverseRamseySystem(x, t=0):
-            """Reversed Ramsey system of differential eqns."""
-            return [-self.capitalContinuous(x, t), \
-                    -self.consumptionContinuous(x, t)]
-
-        # grid of time points at which to compute the value of k
-        t = np.arange(0, T, h)
-        
-        # integrate backwards to k0
-        saddlePath = odeint(inverseRamseySystem, init, t)
-
-        return saddlePath
-
+    
     ########## Plotting methods ##########
     def plot_phaseSpace(self, gridmax, N=500):
         """Phase space diagram for the Ramsey economy.
